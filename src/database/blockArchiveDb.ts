@@ -35,7 +35,7 @@ const getNullParentsQuery = `
 `;
 
 export async function getLatestBlock(){
-    const query = `
+  const query = `
     SELECT 
     height as blockheight, 
     global_slot_since_genesis as globalslotsincegenesis,
@@ -47,57 +47,57 @@ export async function getLatestBlock(){
         LPAD((("timestamp" % 1000)::text), 3, '0') || 'Z' as datetime
     FROM blocks
     WHERE id in (SELECT MAX(id) FROM blocks)`
-    const result = await pool.query(query);
-    const blockSummary: BlockSummary = result.rows[0];
-    return blockSummary;
-    //return [Number(result.rows[0].blockheight), Number(result.rows[0].globalslotsincegenesis), Number(result.rows[0].slot)];
+  const result = await pool.query(query);
+  const blockSummary: BlockSummary = result.rows[0];
+  return blockSummary;
+  //return [Number(result.rows[0].blockheight), Number(result.rows[0].globalslotsincegenesis), Number(result.rows[0].slot)];
 }
 
 export async function getMinMaxBlocksInSlotRange(min: number, max:number){
-    const query = `
+  const query = `
         SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight 
         FROM ConsensusChainForPayout
         WHERE globalSlotSinceGenesis between ${min} and ${max}`;
     
-    const result = await pool.query(query);
+  const result = await pool.query(query);
 
-    const epochminblockheight = result.rows[0].epochminblockheight;
-    const epochmaxblockheight = result.rows[0].epochmaxblockheight;
+  const epochminblockheight = result.rows[0].epochminblockheight;
+  const epochmaxblockheight = result.rows[0].epochmaxblockheight;
 
-    return [epochminblockheight, epochmaxblockheight];
+  return [epochminblockheight, epochmaxblockheight];
 }
 
 export async function getBlocks(key: string, minHeight:number, maxHeight: number){
-    const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
-    if (
-        (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
+  const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
+  if (
+    (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
         (minHeight > 0 && missingHeights.length > 0)
-    ) {
-        throw new Error(
-            `Archive database is missing blocks in the specified range. Import them and try again. Missing blocks were: ${JSON.stringify(
-                missingHeights,
-            )}`,
-        );
-    }
-    const nullParents = await getNullParents(minHeight, maxHeight);
-    if (
-        (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
+  ) {
+    throw new Error(
+      `Archive database is missing blocks in the specified range. Import them and try again. Missing blocks were: ${JSON.stringify(
+        missingHeights,
+      )}`,
+    );
+  }
+  const nullParents = await getNullParents(minHeight, maxHeight);
+  if (
+    (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
         (minHeight > 0 && nullParents.length > 0)
-    ) {
-        throw new Error(
-            `Archive database has null parents in the specified range. Import them and try again. Blocks with null parents were: ${JSON.stringify(
-                nullParents,
-            )}`,
-        );
-    }
-    const result = await pool.query(blockQuery, [key, minHeight, maxHeight]); 
-    return result.rows;
+  ) {
+    throw new Error(
+      `Archive database has null parents in the specified range. Import them and try again. Blocks with null parents were: ${JSON.stringify(
+        nullParents,
+      )}`,
+    );
+  }
+  const result = await pool.query(blockQuery, [key, minHeight, maxHeight]); 
+  return result.rows;
 }
 
 export async function getEpoch(hash: string){
-    if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
+  if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
 
-    const query = `
+  const query = `
     SELECT MIN(b.global_slot), MAX(b.global_slot) 
     FROM blocks b
     INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
@@ -105,47 +105,47 @@ export async function getEpoch(hash: string){
     WHERE slh.value = '${hash}'
     `;
 
-    try{
-        const result = await pool.query(query);
+  try{
+    const result = await pool.query(query);
 
-        if(result.rows[0].min && result.rows[0].max){
-            const minGlobalSlot = Number.parseFloat(result.rows[0].min);
-            const maxGlobalSlot = Number.parseFloat(result.rows[0].max);
-            const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
+    if(result.rows[0].min && result.rows[0].max){
+      const minGlobalSlot = Number.parseFloat(result.rows[0].min);
+      const maxGlobalSlot = Number.parseFloat(result.rows[0].max);
+      const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
 
-            const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
-            const nextEpoch = Math.ceil(maxGlobalSlot / slotsInEpoch);
+      const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
+      const nextEpoch = Math.ceil(maxGlobalSlot / slotsInEpoch);
 
-            if(epoch+1 == nextEpoch){
-                return epoch;
-            }
-            else{
-                throw Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs`);
-            }
-        }
-    }catch(error){
-        console.log(`Error getting epoch ${error}`);
-        throw error;
+      if(epoch+1 == nextEpoch){
+        return epoch;
+      }
+      else{
+        throw Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs`);
+      }
     }
+  }catch(error){
+    console.log(`Error getting epoch ${error}`);
+    throw error;
+  }
 
-    return -1;
+  return -1;
 }
 
 async function getHeightMissing(minHeight: number, maxHeight: number) {
-    const query = `
+  const query = `
     SELECT h as height
     FROM (SELECT h::int FROM generate_series(${minHeight} , ${maxHeight}) h
     LEFT JOIN blocks b
     ON h = b.height where b.height is null) as v
   `;
   
-    const result = await pool.query(query);
-    const heights: Height[] = result.rows;
-    return heights.map((x) => x.height);
+  const result = await pool.query(query);
+  const heights: Height[] = result.rows;
+  return heights.map((x) => x.height);
 }
   
 async function getNullParents(minHeight: number, maxHeight: number) {
-    const result = await pool.query(getNullParentsQuery, [minHeight, maxHeight]);
-    const heights: Height[] = result.rows;
-    return heights.map((x) => x.height);
+  const result = await pool.query(getNullParentsQuery, [minHeight, maxHeight]);
+  const heights: Height[] = result.rows;
+  return heights.map((x) => x.height);
 }
