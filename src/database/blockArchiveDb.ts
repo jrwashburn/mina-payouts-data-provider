@@ -50,7 +50,6 @@ export async function getLatestBlock(){
   const result = await pool.query(query);
   const blockSummary: BlockSummary = result.rows[0];
   return blockSummary;
-  //return [Number(result.rows[0].blockheight), Number(result.rows[0].globalslotsincegenesis), Number(result.rows[0].slot)];
 }
 
 export async function getMinMaxBlocksInSlotRange(min: number, max:number){
