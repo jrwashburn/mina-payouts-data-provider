@@ -5,7 +5,7 @@ This application provides an API to that provides the data needed by [mina-pool-
 
 The API exposes resources for staking-ledgers, blocks, and consensus (current tip).
 
-Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/APIExamples.md)
+Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/blob/deployment/APIExamples.md)
 
 ## consensus
 
