@@ -14,7 +14,7 @@ const blockQuery = `
     statehash,
     stakingledgerhash,
     blockdatetime,
-    slot,
+    globalslot,
     globalslotsincegenesis,
     creatorpublickey,
     winnerpublickey,
@@ -39,7 +39,7 @@ export async function getLatestBlock(){
     SELECT 
     height as blockheight, 
     global_slot_since_genesis as globalslotsincegenesis,
-    global_slot as slot,
+    global_slot as globalslot,
     state_hash as statehash,
     parent_hash as parenthash,
     ledger_hash as ledgerhash,

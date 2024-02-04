@@ -23,7 +23,7 @@ export type Height = {
 export type BlockSummary = {
   blockheight: number;
   globalslotsincegenesis: number;
-  slot: number;
+  globalslot: number;
   statehash: string;
   parenthash: string;
   ledgerhash: string;
