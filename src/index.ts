@@ -24,7 +24,7 @@ app.use(limiter);
 app.use('/consensus', consensusRouter);
 app.use('/epoch', epochRouter);
 app.use('/blocks', blocksRouter);
-app.use('/staking-ledger', stakingLedgerRouter);
+app.use('/staking-ledgers', stakingLedgerRouter);
 
 app.listen(configuration.port, () => {
   console.log(`Mina Pool Payout Data Provider listening on ${configuration.port}`);
