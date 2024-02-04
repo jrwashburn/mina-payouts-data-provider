@@ -6,17 +6,40 @@ export type Stake = {
   untimedAfterSlot: number;
   shareClass: ShareClass;
 };
-
-export type LedgerEntry = {
+interface Timing {
+  initial_minimum_balance?: number;
+  cliff_time?: number;
+  cliff_amount?: number;
+  vesting_period?: number;
+  vesting_increment?: number;
+}
+interface Permissions {
+  stake?: boolean;
+  edit_stake?: boolean;
+  send?: boolean;
+  set_delegate?: boolean;
+  set_permissions?: boolean;
+  set_verification_key?: boolean;
+}
+export interface LedgerEntry {
   pk: string;
   balance: number;
   delegate: string;
-  timing: {
-    initial_minimum_balance: number;
-    cliff_time: number;
-    cliff_amount: number;
-    vesting_period: number;
-    vesting_increment: number;
-  };
-};
+  token?: number;
+  nonce?: number;
+  receipt_chain_hash?: string;
+  voting_for?: string;
+  timing?: Timing;
+  permissions?: Permissions;
+}
 
+export interface TimedStakingLedgerResultRow {
+  public_key: string;
+  balance: number;
+  delegate_key: string;
+  timing_initial_minimum_balance?: number;
+  timing_cliff_time?: number;
+  timing_cliff_amount?: number;
+  timing_vesting_period?: number;
+  timing_vesting_increment?: number;
+}

@@ -23,6 +23,8 @@ function loadConfiguration(): Configuration {
     slDbHost: String(process.env.SLDB_HOST),
     slDbPort: Number(process.env.SLDB_PORT),
     slDbName: String(process.env.SLDB_NAME),
+    ledgerApiUser: String(process.env.LEDGER_API_USER),
+    ledgerApiPassword: String(process.env.LEDGER_API_PASSWORD),
   }
   return configuration;
 }
@@ -45,10 +47,12 @@ function validateEnv() {
     'SLDB_NAME',
     'SLDB_REQUIRE_SSL',
     'SLDB_CERTIFICATE',
+    'LEDGER_API_USER',
+    'LEDGER_API_PASSWORD',
   ];
   envVars.forEach((variable) => {
     if (!process.env[variable]) {
-      let message = `Environment variable ${variable} is missing`;
+      const message = `Environment variable ${variable} is missing`;
       console.log(message);
       throw Error(message);
     }
