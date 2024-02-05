@@ -1,0 +1,10 @@
+services:
+  mppdp:
+    container_name: mppdp
+    image: mppdp-image
+    build:
+      context: .
+    environment:
+      NODE_ENV: production
+    ports:
+      - 8080:8080

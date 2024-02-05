@@ -20,6 +20,10 @@ A staking-ledger can be retrieved from the /staking-ledgers endpoint by hash or 
 [/staking-ledgers/epoch/[epochNumber]?key=[blockProducerKey]](http://api.minastakes.com/staking-ledgers/epoch/0?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L)  
 [/staking-ledgers/[stakingLedgerHash]](http://api.minastakes.com/staking-ledger/jwuGkeeB2rxs2Cr679nZMVZpWms6QoEkcgt82Z2jsjB9X1MuJwW?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L)
 
+A staking-ledger can also be uploaded to the /staking-ledgers endpoign by posting the ledger to it's hash.
+
+POST /staking-ledgers/[stakingLedgerHash] -- see example below in the maintenance section.
+
 ## blocks
 
 The blocks needed for payout calculation can be retrieved from the /blocks endpoint, filtered by block producer key and minimum and maximum block heights.
@@ -31,10 +35,30 @@ The blocks needed for payout calculation can be retrieved from the /blocks endpo
 ## create container images
 
 Mac version for local testing  
-`docker build -f Dockerfile.mac -t mppdp-mac .`  
+`docker build -f ./deploy/Dockerfile.mac -t [registry]mppdp-mac:v1.3.0 .`  
 Linux version for k8s deployment  
-`docker build -f Dockerfile.linux -t mppdp-linux .`
+`docker build -f ./deploy/Dockerfile.linux -t [registry]mppdp-linux:v1.3.0 .`  
 
-## examples
 
-curl -u "mppdpsl:mppdpsl-password" -X POST -H "Content-Type: multipart/form-data" -F "jsonFile=@./jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF.json" http://localhost:8080/staking-ledger/jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF
+## tag and upload to container registry
+
+`docker tag [registry]/mppdp:v1.3.0 [cloud registry]/[repo]/mppdp:v1.3.0`  
+`docker push [registry]/[repo]/mppdp:v1.3.0`  
+
+## apply k8s deployment
+
+Create secrets for db password and basic auth for ledgers upload  
+`kubectl create secret generic dbpassword --from-literal DB_PASSWORD=[Password]`  
+`kubectl create secret generic sldbpassword --from-literal SLDB_PASSWORD=[Password]`  
+`kubectl create secret generic ledgerapipassword --from-literal LEDGER_API_PASSWORD=[Password]`
+
+Apply deployment
+`kubectl apply -f ./deploy/deployment.yaml`
+
+# Maintenance
+
+Staking ledgers must be kept up to date each epoch. The /staking-ledgers endpoint also accepts a form post to get a staking ledger file and apply it. This is on an endpoing that has basic authentication.
+
+The ledgers can be posted via script - for example:
+
+curl -u "mppdpsl:mppdpsl-password" -X POST -H "Content-Type: multipart/form-data" -F "jsonFile=@./jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF.json" http://localhost:8080/staking-ledgers/jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF

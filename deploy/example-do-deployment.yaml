@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mppdp
+  labels:
+    app: mppdp
+metadata:
+  name: api-minastakes-com
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "api.minastakes.com"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "504ffefb-2d64-4fb4-a0ce-17eaf288aa6f"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "https"
+    service.beta.kubernetes.io/do-loadbalancer-hostname: "api.minastakes.com"
+    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "true"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 8080
+  selector:
+    app: mppdp
+spec:
+  type: LoadBalancer
+  ports:
+    - name: https
+      protocol: TCP
+      port: 8443
+      targetPort: 8080
+  selector:
+    app: mppdp-ledger-loader
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mppdp
+  labels:
+    app: mppdp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mppdp
+  template:
+    metadata:
+      labels:
+        app: mppdp
+    spec:
+      containers:
+      - name: mppdp
+        image: registry.digitalocean.com/myreg/mppdp:v1.0.5
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_USER
+          value: 
+        - name: DB_HOST
+          value: 
+        - name: DB_PORT
+          value: " "
+        - name: DB_NAME
+          value: 
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dbpassword
+              key: DB_PASSWORD
+        - name: NUM_SLOTS_IN_EPOCH
+          value: "7140"
+        - name: API_PORT
+          value: "8080"
+        - name: DB_REQUIRE_SSL
+          value: "true"
+        - name: DB_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: dbcertificate
+              key: DB_CERTIFICATE
+        - name: SLDB_USER
+          value: 
+        - name: SLDB_HOST
+          value: 
+        - name: SLDB_PORT
+          value: ""
+        - name: SLDB_NAME
+          value: 
+        - name: SLDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sldbpassword
+              key: SLDB_PASSWORD
+        - name: SLDB_REQUIRE_SSL
+          value: "true"
+        - name: SLDB_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: dbcertificate
+              key: DB_CERTIFICATE
+        - name: LEDGER_API_USER
+          value: "mmpd-sl-uploader"
+        - name: LEDGER_API_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ledgerapipassword
+              key: LEDGER_API_PASSWORD

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mppdp
+  labels:
+    app: mppdp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mppdp
+  template:
+    metadata:
+      labels:
+        app: mppdp
+    spec:
+      containers:
+      - name: mppdp
+        image: mppdp-image
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+            - name: DB_USER
+              value: 
+            - name: DB_HOST
+              value: 
+            - name: DB_PORT
+              value: 
+            - name: DB_NAME
+              value: 
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dbpassword
+                  key: DB_PASSWORD
+            - name: NUM_SLOTS_IN_EPOCH
+              value: "7140"
+            - name: API_PORT
+              value: "8080"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mppdp
+spec:
+  selector:
+    app: mppdp
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: LoadBalancer
