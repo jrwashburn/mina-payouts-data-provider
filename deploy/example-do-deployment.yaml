@@ -48,13 +48,13 @@ spec:
           value: "7140"
         - name: API_PORT
           value: "8080"
-        - name: LEDGER_API_USER
-          value: "**USERNAME FOR BASIC AUTHENTICATION**"
-        - name: LEDGER_API_PASSWORD
+        - name: LEDGER_UPLOAD_API_USER
+          value: "ledger-upload-api-user"
+        - name: LEDGER_UPLOAD_API_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ledger_api_password
-              key: LEDGER_API_PASSWORD
+              name: ledger-upload-api-password
+              key: LEDGER_UPLOAD_API_PASSWORD
         - name: BLOCK_DB_QUERY_USER
           value: **USER NAME FOR BLOCK DB QUERY USER**
         - name: BLOCK_DB_QUERY_HOST

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-kubectl delete secret ledger-upload-password
+kubectl delete secret ledger-upload-api-password
 kubectl delete secret block-db-query-password
 kubectl delete secret block-db-query-certificate
 kubectl delete secret leger-db-query-password
@@ -8,7 +8,7 @@ kubectl delete secret ledger-db-query-certificate
 kubectl delete secret leger-db-command-password
 kubectl delete secret ledger-db-command-certificate
 
-kubectl create secret generic ledger-upload-password --from-literal LEDGER_UPLOAD_PASSWORD=""
+kubectl create secret generic ledger-upload-api-password --from-literal LEDGER_UPLOAD_API_PASSWORD=""
 
 kubectl create secret generic block-db-query-password --from-literal BLOCK_DB_QUERY_PASSWORD=""
 kubectl create secret generic block-db-query-certificate --from-file BLOCK_DB_QUERY_CERTIFICATE=/ca-certificate.crt
