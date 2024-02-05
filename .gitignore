@@ -5,3 +5,5 @@ node_modules/
 .env*
 package-lock.json
 dist/
+deploy/deployment.yaml
+deploy/deploy.sh

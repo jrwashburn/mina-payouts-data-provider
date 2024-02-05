@@ -1,6 +1,6 @@
 import express from 'express';
 import * as db from '../database/blockArchiveDb';
-import {BlockSummary} from '../models/blocks';
+import { BlockSummary } from '../models/blocks';
 import configuration from '../configurations/environmentConfiguration';
 
 const router = express.Router();
@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     const currentEpoch = getCurrentEpoch(blockSummary.globalslotsincegenesis);
     const response = {
       epoch: currentEpoch, blockHeight: blockSummary.blockheight, globalSlotSinceGenesis: blockSummary.globalslotsincegenesis,
-      slot: blockSummary.slot, stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,
+      slot: blockSummary.globalslot - (currentEpoch * configuration.slotsPerEpoch), stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,
       ledgerHash: blockSummary.ledgerhash, datetime: blockSummary.datetime, messages: messages
     };
     res.status(200).json(response);

@@ -2,11 +2,11 @@
 // view can be created wihth script in src/database/dbScripts/createMaterializedView.sql
 
 import { BlockSummary, Height } from '../models/blocks';
-import { createPool } from './databaseFactory'
+import { createBlockQueryPool } from './databaseFactory'
 import configuration from '../configurations/environmentConfiguration';
 
-console.log(`Creating pool targeting ${configuration.dbHost} at port ${configuration.dbPort}`);
-const pool = createPool(configuration.dbConnectionSSL);
+console.log(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
+const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
 
 const blockQuery = `
     SELECT
@@ -14,7 +14,7 @@ const blockQuery = `
     statehash,
     stakingledgerhash,
     blockdatetime,
-    slot,
+    globalslot,
     globalslotsincegenesis,
     creatorpublickey,
     winnerpublickey,
@@ -39,7 +39,7 @@ export async function getLatestBlock(){
     SELECT 
     height as blockheight, 
     global_slot_since_genesis as globalslotsincegenesis,
-    global_slot as slot,
+    global_slot as globalslot,
     state_hash as statehash,
     parent_hash as parenthash,
     ledger_hash as ledgerhash,

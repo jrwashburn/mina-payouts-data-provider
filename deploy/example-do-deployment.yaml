@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mppdp
+  labels:
+    app: mppdp
+metadata:
+  name: mina-payouts-data-provider
+  annotations:
+    service.beta.kubernetes.io/do-loadbalancer-name: "fqdn"
+    service.beta.kubernetes.io/do-loadbalancer-certificate-id: "certid"
+    service.beta.kubernetes.io/do-loadbalancer-protocol: "https"
+    service.beta.kubernetes.io/do-loadbalancer-hostname: "fqdn"
+    service.beta.kubernetes.io/do-loadbalancer-disable-lets-encrypt-dns-records: "true"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: https-mppdp
+      protocol: TCP
+      port: 443
+      targetPort: 8080
+  selector:
+    app: mppdp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mppdp
+  labels:
+    app: mppdp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mppdp
+  template:
+    metadata:
+      labels:
+        app: mppdp
+    spec:
+      containers:
+      - name: mppdp
+        image: registry.digitalocean.com/myreg/mppdp:v1.3.0
+        ports:
+        - containerPort: 8080
+        env:
+        - name: NUM_SLOTS_IN_EPOCH
+          value: "7140"
+        - name: API_PORT
+          value: "8080"
+        - name: LEDGER_API_USER
+          value: "**USERNAME FOR BASIC AUTHENTICATION**"
+        - name: LEDGER_API_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ledger_api_password
+              key: LEDGER_API_PASSWORD
+        - name: BLOCK_DB_QUERY_USER
+          value: **USER NAME FOR BLOCK DB QUERY USER**
+        - name: BLOCK_DB_QUERY_HOST
+          value: **HOST FOR BLOCK DB QUERY**
+        - name: BLOCK_DB_QUERY_PORT
+          value: **PORT FOR BLOCK DB QUERY**
+        - name: BLOCK_DB_QUERY_DB_NAME
+          value: **MINA ARCHIVE DATABASE NAME**
+        - name: BLOCK_DB_QUERY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: block_db_query_password
+              key: BLOCK_DB_QUERY_PASSWORD
+        - name: BLOCK_DB_QUERY_REQUIRE_SSL
+          value: "true"
+        - name: BLOCK_DB_QUERY_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: block_db_query_certificate
+              key: BLOCK_DB_QUERY_CERTIFICATE
+        - name: LEDGER_DB_QUERY_USER
+          value: **USER NAME FOR LEDGER DB QUERY USER**
+        - name: LEDGER_DB_QUERY_HOST
+          value: **HOST FOR LEDGER DB QUERY**
+        - name: LEDGER_DB_QUERY_PORT
+          value: "**PORT FOR LEDGER DB QUERY**"
+        - name: LEDGER_DB_QUERY_NAME
+          value: **DB NAME FOR LEDGER DB QUERY**
+        - name: LEDGER_DB_QUERY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: leger_db_query_password
+              key: LEDGER_DB_QUERY_PASSWORD
+        - name: LEGER_DB_QUERY_REQUIRE_SSL
+          value: "true"
+        - name: LEDGER_DB_DB_QUERY_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: ledger_db_query_certificate
+              key: LEDGER_DB_QUERY_CERTIFICATE
+        - name: LEDGER_DB_COMMAND_USER
+          value: **USER NAME FOR LEDGER DB COMMAND USER**
+        - name: LEDGER_DB_COMMAND_HOST
+          value: **HOST FOR LEDGER DB COMMAND**
+        - name: LEDGER_DB_COMMAND_PORT
+          value: "**PORT FOR LEDGER DB COMMAND**"
+        - name: LEDGER_DB_COMMAND_NAME
+          value: **DB NAME FOR LEDGER DB COMMAND**
+        - name: LEDGER_DB_COMMAND_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: leger_db_command_password
+              key: LEDGER_DB_COMMAND_PASSWORD
+        - name: LEGER_DB_COMMAND_REQUIRE_SSL
+          value: "true"
+        - name: LEDGER_DB_DB_COMMAND_CERTIFICATE
+          valueFrom:
+            secretKeyRef:
+              name: ledger_db_command_certificate
+              key: LEDGER_DB_COMMAND_CERTIFICATE

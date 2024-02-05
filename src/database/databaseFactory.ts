@@ -1,49 +1,72 @@
 import { Pool } from 'pg';
 import configuration from '../configurations/environmentConfiguration';
 
-export function createPool(useSSL : boolean){
-  if(useSSL){
+export function createBlockQueryPool(useSSL: boolean) {
+  if (useSSL) {
 
     return new Pool({
-      user: configuration.dbUser,
-      host: configuration.dbHost,
-      database: configuration.dbName,
-      password: configuration.dbPassword,
-      port: configuration.dbPort,
+      user: configuration.blockDbQueryUser,
+      host: configuration.blockDbQueryHost,
+      database: configuration.blockDbQueryName,
+      password: configuration.blockDbQueryPassword,
+      port: configuration.blockDbQueryPort,
       ssl: {
-        ca: configuration.dbCertificate,
+        ca: configuration.blockDbQueryCertificate,
       },
     });
   }
 
   return new Pool({
-    user: configuration.dbUser,
-    host: configuration.dbHost,
-    database: configuration.dbName,
-    password: configuration.dbPassword,
-    port: configuration.dbPort,
+    user: configuration.blockDbQueryUser,
+    host: configuration.blockDbQueryHost,
+    database: configuration.blockDbQueryName,
+    password: configuration.blockDbQueryPassword,
+    port: configuration.blockDbQueryPort,
   });
 }
 
-export function createLedgerPool(useSSL : boolean){
-  if(useSSL){
+export function createLedgerQueryPool(useSSL: boolean) {
+  if (useSSL) {
     return new Pool({
-      user: configuration.slDbUser,
-      host: configuration.slDbHost,
-      database: configuration.slDbName,
-      password: configuration.slDbPassword,
-      port: configuration.slDbPort,
+      user: configuration.ledgerDbQueryUser,
+      host: configuration.ledgerDbQueryHost,
+      database: configuration.ledgerDbQueryName,
+      password: configuration.ledgerDbQueryPassword,
+      port: configuration.ledgerDbQueryPort,
       ssl: {
-        ca: configuration.slDbCertificate,
+        ca: configuration.ledgerDbQueryCertificate,
       },
     });
   }
 
   return new Pool({
-    user: configuration.slDbUser,
-    host: configuration.slDbHost,
-    database: configuration.slDbName,
-    password: configuration.slDbPassword,
-    port: configuration.slDbPort,
+    user: configuration.ledgerDbQueryUser,
+    host: configuration.ledgerDbQueryHost,
+    database: configuration.ledgerDbQueryName,
+    password: configuration.ledgerDbQueryPassword,
+    port: configuration.ledgerDbQueryPort,
+  });
+}
+
+export function createStakingLedgerCommandPool(useSSL: boolean) {
+  if (useSSL) {
+    return new Pool({
+      user: configuration.ledgerDbCommandUser,
+      host: configuration.ledgerDbCommandHost,
+      database: configuration.ledgerDbCommandName,
+      password: configuration.ledgerDbCommandPassword,
+      port: configuration.ledgerDbCommandPort,
+      ssl: {
+        ca: configuration.ledgerDbCommandCertificate,
+      },
+    });
+  }
+
+  return new Pool({
+    user: configuration.ledgerDbCommandUser,
+    host: configuration.ledgerDbCommandHost,
+    database: configuration.ledgerDbCommandName,
+    password: configuration.ledgerDbCommandPassword,
+    port: configuration.ledgerDbCommandPort,
   });
 }
