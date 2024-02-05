@@ -7,6 +7,8 @@ The API exposes resources for staking-ledgers, blocks, and consensus (current ti
 
 Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/blob/deployment/APIExamples.md)
 
+The application assumes the availability of a mina archive database as well as a mina stakes database that is maintained separately. The stakes database can be created using the script in /database-setup/stakesDB.sql. The staking ledger for each epoch must be extracted from a mina node and uploaded to the staking-ledgers endpoint each epoch (or in advance.)
+
 ## consensus
 
 [/consensus](https://api.minastakes.com/consensus)
@@ -47,13 +49,27 @@ Linux version for k8s deployment
 
 ## apply k8s deployment
 
-Create secrets for db password and basic auth for ledgers upload  
-`kubectl create secret generic dbpassword --from-literal DB_PASSWORD=[Password]`  
-`kubectl create secret generic sldbpassword --from-literal SLDB_PASSWORD=[Password]`  
-`kubectl create secret generic ledgerapipassword --from-literal LEDGER_API_PASSWORD=[Password]`
+Create secrets for db password and basic auth for ledgers upload.  
 
-Apply deployment
-`kubectl apply -f ./deploy/deployment.yaml`
+### database secrets  
+There are three database specifications - read users for the mina archive database and the staking ledgers database, and a separate connection for the user that writes the staking ledgers to the database. It is assumed that each has a client certificate as well; if there is not a client certificate in place, change the *REQUIRE_SSL variables from "true" to "false" for each database connection. (e.g. LEGER_DB_QUERY_REQUIRE_SSL="false")  
+
+The environment variable validation will not check for the presence of the certificate; the application will crash if ssl is set to true but no certificate is provided for any connection.  
+
+`kubectl create secret generic block-db-query-password --from-literal BLOCK_DB_QUERY_PASSWORD=[Password]`   
+`kubectl create secret generic block-db-query-certificate --from-literal BLOCK_DB_QUERY_CERTIFICATE=[CERTIFICATE]`  
+`kubectl create secret generic leger-db-query-password --from-literal LEDGER_DB_QUERY_PASSWORD=[Password]`    
+`kubectl create secret generic ledger-db-query-certificate --from-literal LEDGER_DB_QUERY_CERTIFICATE=[CERTIFICATE]`  
+`kubectl create secret generic leger-db-command-password --from-literal LEDGER_DB_COMMAND_PASSWORD=[Password]`  
+`kubectl create secret generic ledger-db-command-certificate --from-literal LEDGER_DB_COMMAND_CERTIFICATE=[CERTIFICATE]`  
+
+### upload user basic auth secret
+The staking-ledgers POST endpoint uses basic authentication to authenticate the user posting the ledger.  
+`kubectl create secret generic ledger-upload-password --from-literal LEDGER_UPLOAD_PASSWORD=[Password]`  
+
+### deploy to k8s cluster  
+Apply deployment  
+`kubectl apply -f ./deploy/deployment.yaml`  
 
 # Maintenance
 

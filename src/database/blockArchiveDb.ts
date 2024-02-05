@@ -2,11 +2,11 @@
 // view can be created wihth script in src/database/dbScripts/createMaterializedView.sql
 
 import { BlockSummary, Height } from '../models/blocks';
-import { createPool } from './databaseFactory'
+import { createBlockQueryPool } from './databaseFactory'
 import configuration from '../configurations/environmentConfiguration';
 
-console.log(`Creating pool targeting ${configuration.dbHost} at port ${configuration.dbPort}`);
-const pool = createPool(configuration.dbConnectionSSL);
+console.log(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
+const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
 
 const blockQuery = `
     SELECT

@@ -1,9 +1,13 @@
 import configuration from '../configurations/environmentConfiguration';
 import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
 import * as db from './blockArchiveDb';
-import { createLedgerPool } from './databaseFactory'
+import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 
-const sldb = createLedgerPool(configuration.slDbConnectionSSL);
+console.log(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
+const sldb = createLedgerQueryPool(configuration.ledgerDbQueryConnectionSSL);
+
+console.log(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
+const commanddb = createStakingLedgerCommandPool(configuration.ledgerDbCommandConnectionSSL);
 
 export async function getStakingLedgers(hash: string, key: string) {
   const query = `SELECT 
@@ -46,7 +50,7 @@ export async function hashExists(hash: string) {
 export async function insertBatch(dataArray: LedgerEntry[], hash: string, nextEpoch: number | null) {
   console.log(`insertBatch called: ${dataArray.length} records to insert.`);
   const epoch = await db.getEpoch(hash);
-  const client = await sldb.connect();
+  const client = await commanddb.connect();
   try {
     await client.query('BEGIN');
     const batchSize = 1000;
