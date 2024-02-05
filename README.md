@@ -9,7 +9,7 @@ Example return values can be seen [here](https://github.com/jrwashburn/mina-payo
 
 ## consensus
 
-[/consensus](https://api.minastakes.com)
+[/consensus](https://api.minastakes.com/consensus)
 
 The /consensus endpoint returns the current (ish) network tip
 
@@ -18,7 +18,7 @@ The /consensus endpoint returns the current (ish) network tip
 A staking-ledger can be retrieved from the /staking-ledgers endpoint by hash or by epoch, and is filtered by block producer key.
 
 [/staking-ledgers/epoch/[epochNumber]?key=[blockProducerKey]](http://api.minastakes.com/staking-ledgers/epoch/0?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L)  
-[/staking-ledgers/[stakingLedgerHash]](http://api.minastakes.com/staking-ledger/jwuGkeeB2rxs2Cr679nZMVZpWms6QoEkcgt82Z2jsjB9X1MuJwW?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L)
+[/staking-ledgers/[stakingLedgerHash]](http://api.minastakes.com/staking-ledgers/jwuGkeeB2rxs2Cr679nZMVZpWms6QoEkcgt82Z2jsjB9X1MuJwW?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L)
 
 A staking-ledger can also be uploaded to the /staking-ledgers endpoign by posting the ledger to it's hash.
 
