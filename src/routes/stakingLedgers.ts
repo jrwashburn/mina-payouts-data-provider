@@ -12,8 +12,8 @@ const upload = multer({
     fileSize: 150 * 1024 * 1024, // limit file size to 5MB
   },
 });
-const user = configuration.ledgerApiUser;
-const password = configuration.ledgerApiPassword;
+const user = configuration.ledgerUploadApiUser;
+const password = configuration.ledgerUploadApiPassword;
 const auth = basicAuth({
   users: {
     [user]: password
