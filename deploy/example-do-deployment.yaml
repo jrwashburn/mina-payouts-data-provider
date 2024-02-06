@@ -41,6 +41,7 @@ spec:
       containers:
       - name: mppdp
         image: registry.digitalocean.com/myreg/mppdp:v1.3.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
