@@ -26,3 +26,9 @@ docker build -f ./deploy/Dockerfile.linux -t [myreg]/mppdp:v$VERSION .
 docker tag [myreg]/mppdp:v$VERSION [registry.mycloud.com]/[repo]/mppdp:v$VERSION
 docker push [registry.mycloud.com]/[repo]/mppdp:v$VERSION
 kubectl apply -f ./deploy/[realdeployment].yaml
+
+for POD in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}')
+do
+  echo "Logs for $POD:"
+  kubectl logs $POD
+done
