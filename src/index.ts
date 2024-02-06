@@ -15,12 +15,13 @@ const limiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 });
-
 const app = express();
+app.set('trust proxy', 2)
 app.use(responseTime());
 app.use(helmet());
 app.use(limiter);
 
+app.get('/ip', (request, response) => response.send(request.ip))
 app.use('/consensus', consensusRouter);
 app.use('/epoch', epochRouter);
 app.use('/blocks', blocksRouter);
