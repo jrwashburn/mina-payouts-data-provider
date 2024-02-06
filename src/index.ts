@@ -21,7 +21,6 @@ app.use(responseTime());
 app.use(helmet());
 app.use(limiter);
 
-app.get('/ip', (request, response) => response.send(request.ip))
 app.use('/consensus', consensusRouter);
 app.use('/epoch', epochRouter);
 app.use('/blocks', blocksRouter);
