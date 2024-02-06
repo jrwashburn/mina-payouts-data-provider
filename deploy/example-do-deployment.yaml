@@ -86,9 +86,9 @@ spec:
         - name: LEDGER_DB_QUERY_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: leger_db_query_password
+              name: ledger_db_query_password
               key: LEDGER_DB_QUERY_PASSWORD
-        - name: LEGER_DB_QUERY_REQUIRE_SSL
+        - name: LEDGER_DB_QUERY_REQUIRE_SSL
           value: "true"
         - name: LEDGER_DB_DB_QUERY_CERTIFICATE
           valueFrom:
@@ -106,9 +106,9 @@ spec:
         - name: LEDGER_DB_COMMAND_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: leger_db_command_password
+              name: ledger_db_command_password
               key: LEDGER_DB_COMMAND_PASSWORD
-        - name: LEGER_DB_COMMAND_REQUIRE_SSL
+        - name: LEDGER_DB_COMMAND_REQUIRE_SSL
           value: "true"
         - name: LEDGER_DB_DB_COMMAND_CERTIFICATE
           valueFrom:

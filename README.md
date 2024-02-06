@@ -52,15 +52,15 @@ Linux version for k8s deployment
 Create secrets for db password and basic auth for ledgers upload.  
 
 ### database secrets  
-There are three database specifications - read users for the mina archive database and the staking ledgers database, and a separate connection for the user that writes the staking ledgers to the database. It is assumed that each has a client certificate as well; if there is not a client certificate in place, change the *REQUIRE_SSL variables from "true" to "false" for each database connection. (e.g. LEGER_DB_QUERY_REQUIRE_SSL="false")  
+There are three database specifications - read users for the mina archive database and the staking ledgers database, and a separate connection for the user that writes the staking ledgers to the database. It is assumed that each has a client certificate as well; if there is not a client certificate in place, change the *REQUIRE_SSL variables from "true" to "false" for each database connection. (e.g. LEDGER_DB_QUERY_REQUIRE_SSL="false")  
 
 The environment variable validation will not check for the presence of the certificate; the application will crash if ssl is set to true but no certificate is provided for any connection.  
 
 `kubectl create secret generic block-db-query-password --from-literal BLOCK_DB_QUERY_PASSWORD=[Password]`   
 `kubectl create secret generic block-db-query-certificate --from-literal BLOCK_DB_QUERY_CERTIFICATE=[CERTIFICATE]`  
-`kubectl create secret generic leger-db-query-password --from-literal LEDGER_DB_QUERY_PASSWORD=[Password]`    
+`kubectl create secret generic ledger-db-query-password --from-literal LEDGER_DB_QUERY_PASSWORD=[Password]`    
 `kubectl create secret generic ledger-db-query-certificate --from-literal LEDGER_DB_QUERY_CERTIFICATE=[CERTIFICATE]`  
-`kubectl create secret generic leger-db-command-password --from-literal LEDGER_DB_COMMAND_PASSWORD=[Password]`  
+`kubectl create secret generic ledger-db-command-password --from-literal LEDGER_DB_COMMAND_PASSWORD=[Password]`  
 `kubectl create secret generic ledger-db-command-certificate --from-literal LEDGER_DB_COMMAND_CERTIFICATE=[CERTIFICATE]`  
 
 ### upload user basic auth secret
