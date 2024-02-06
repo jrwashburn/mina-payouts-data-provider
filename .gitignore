@@ -7,3 +7,4 @@ package-lock.json
 dist/
 deploy/deployment.yaml
 deploy/deploy.sh
+deploy/*.crt
