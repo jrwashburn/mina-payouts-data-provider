@@ -56,7 +56,7 @@ export async function getMinMaxBlocksInSlotRange(min: number, max:number){
   const query = `
         SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight 
         FROM ConsensusChainForPayout
-        WHERE globalSlotSinceGenesis between $1 and $2`;
+        WHERE globalSlotSinceGenesis between CAST($1 AS INTEGER) and CAST($2 AS INTEGER)`;
   const result = await pool.query(query, [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
   const epochmaxblockheight = result.rows[0].epochmaxblockheight;
@@ -130,7 +130,7 @@ export async function getEpoch(hash: string){
 async function getHeightMissing(minHeight: number, maxHeight: number) {
   const query = `
     SELECT h as height
-    FROM (SELECT h::int FROM generate_series($1 , $2) h
+    FROM (SELECT h::int FROM generate_series(CAST($1 as INTEGER) , CAST($2 as INTEGER)) h
     LEFT JOIN blocks b
     ON h = b.height where b.height is null) as v
   `;
