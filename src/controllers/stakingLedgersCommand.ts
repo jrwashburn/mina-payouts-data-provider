@@ -1,4 +1,5 @@
 import * as sldb from '../database/stakingLedgerDb';
+import { HttpError } from '../models/routes';
 
 export async function uploadStakingLedger(file: Buffer, hash: string, nextEpoch: number | null) {
 
@@ -7,8 +8,7 @@ export async function uploadStakingLedger(file: Buffer, hash: string, nextEpoch:
   let messages: string[] = [];
 
   if (isAlreadyImported) {
-    console.log(`File with hash ${hash} was already imported`);
-    throw (`File with hash ${hash} was already imported`);
+    throw new HttpError(409, `File with hash ${hash} was already imported`);
   }
   else {
     try {

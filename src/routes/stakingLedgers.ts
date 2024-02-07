@@ -4,6 +4,7 @@ import basicAuth from 'express-basic-auth';
 import configuration from '../configurations/environmentConfiguration';
 import { getLedgerFromHashForKey, getLedgerFromEpochForKey } from '../controllers/stakingLedgersQuery';
 import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
+import { HttpError } from '../models/routes';
 
 const router = express.Router();
 const upload = multer({
@@ -37,8 +38,13 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
     res.status(200).json(response);
   }
   catch (error) {
-    console.log(error);
-    res.status(500).send('An error occurred processing staking ledger information');
+    if (error instanceof HttpError) {
+      console.log(error.message);
+      res.status(error.status).send(error.message);
+    } else {
+      console.log(error);
+      res.status(500).send('An error occurred uploading staking ledger');
+    }
   }
 });
 
