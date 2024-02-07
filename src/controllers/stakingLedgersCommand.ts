@@ -8,8 +8,7 @@ export async function uploadStakingLedger(file: Buffer, hash: string, nextEpoch:
 
   if (isAlreadyImported) {
     console.log(`File with hash ${hash} was already imported`);
-    messages.push(`File with hash ${hash} was already imported`);
-    return (messages);
+    throw (`File with hash ${hash} was already imported`);
   }
   else {
     try {
