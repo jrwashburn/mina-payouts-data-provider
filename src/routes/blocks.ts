@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(response);
   }
   catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send('An error occurred getting block information');
   }
 });

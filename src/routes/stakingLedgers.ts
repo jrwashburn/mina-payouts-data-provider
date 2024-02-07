@@ -39,10 +39,10 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
   }
   catch (error) {
     if (error instanceof HttpError) {
-      console.log(error.message);
+      console.error(`http error: ${error.message}`);
       res.status(error.status).send(error.message);
     } else {
-      console.log(error);
+      console.error(error);
       res.status(500).send('An error occurred uploading staking ledger');
     }
   }
@@ -62,7 +62,7 @@ router.get('/:ledgerHash', async (req, res) => {
     res.status(200).json(response);
   }
   catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send('An error occurred getting staking ledger information');
   }
 
@@ -82,7 +82,7 @@ router.get('/epoch/:epoch', async (req, res) => {
     res.status(200).json(response);
   }
   catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send('An error occurred getting staking ledger information');
   }
 });
