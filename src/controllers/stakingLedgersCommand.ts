@@ -1,24 +1,23 @@
 import * as sldb from '../database/stakingLedgerDb';
-import { HttpError } from '../models/routes';
+import { ControllerResponse } from '../models/controller';
 
 export async function uploadStakingLedger(file: Buffer, hash: string, nextEpoch: number | null) {
-
   const isAlreadyImported = await sldb.hashExists(hash);
   // eslint-disable-next-line prefer-const
-  let messages: string[] = [];
 
   if (isAlreadyImported) {
-    throw new HttpError(`File with hash ${hash} was already imported`, 409);
+    const controllerResponse: ControllerResponse = { responseMessages: [`File with hash ${hash} was already imported`], responseCode: 409 }
+    return controllerResponse;
   }
   else {
     try {
       await loadData(file, hash, nextEpoch);
       console.log(`Finished processing file ${hash}`);
-      messages.push(`Received file and processing for hash ${hash}`);
-      return (messages);
+      const controllerResponse: ControllerResponse = { responseMessages: [`Received file and processing for hash ${hash}`] };
+      return (controllerResponse);
     } catch (error) {
-      console.error('Error processing file:', error);
-      throw error;
+      const controllerResponse: ControllerResponse = { responseError: 'Error processing file', responseCode: 500 }
+      return controllerResponse;
     }
   }
 }
@@ -32,7 +31,7 @@ function loadData(ledger: Buffer, hash: string, nextepoch: number | null) {
     const dataArray = JSON.parse(jsonData);
     sldb.insertBatch(dataArray, hash, nextepoch);
   } catch (error) {
-    console.error('Error parsing JSON:', error);
-    throw error;
+    const controllerResponse: ControllerResponse = { responseError: 'Error parsing json or inserting batch', responseCode: 500 }
+    return controllerResponse;
   }
 }

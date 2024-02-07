@@ -4,7 +4,8 @@ import basicAuth from 'express-basic-auth';
 import configuration from '../configurations/environmentConfiguration';
 import { getLedgerFromHashForKey, getLedgerFromEpochForKey } from '../controllers/stakingLedgersQuery';
 import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
-import { HttpError } from '../models/routes';
+import { ControllerResponse } from '../models/controller';
+import { Ledger } from '../models/stakes';
 
 const router = express.Router();
 const upload = multer({
@@ -31,20 +32,15 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
   const nextEpoch: number | null = req.query.nextepoch as unknown as number | null;
   console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and nextepoch ${req.query.nextepoch}`);
   try {
-    const messages = await uploadStakingLedger(req.file.buffer, hash, nextEpoch);
+    const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, nextEpoch);
     const response = {
-      messages: messages,
+      messages: controllerResponse.responseMessages,
     }
     res.status(200).json(response);
   }
   catch (error) {
-    if (error instanceof HttpError) {
-      console.error(`http error: ${error.message}`);
-      res.status(error.status).send(error.message);
-    } else {
-      console.error(error);
-      res.status(500).send('An error occurred uploading staking ledger');
-    }
+    console.error(error);
+    res.status(500).send('An error occurred uploading staking ledger');
   }
 });
 
@@ -53,11 +49,12 @@ router.get('/:ledgerHash', async (req, res) => {
   const ledgerHash = req.params.ledgerHash as string;
 
   try {
-    const [stakes, totalStakingBalance, messages] = await getLedgerFromHashForKey(ledgerHash, key);
+    const controllerResponse: ControllerResponse = await getLedgerFromHashForKey(ledgerHash, key);
+    const responseData: Ledger = controllerResponse.responseData as Ledger;
     const response = {
-      stakes: stakes,
-      totalStakingBalance: totalStakingBalance,
-      messages: messages,
+      stakes: responseData.stakes,
+      totalStakingBalance: responseData.totalStakingBalance,
+      messages: controllerResponse.responseMessages as string[],
     }
     res.status(200).json(response);
   }
@@ -73,11 +70,12 @@ router.get('/epoch/:epoch', async (req, res) => {
   const epoch = parseInt(req.params.epoch);
 
   try {
-    const [stakes, totalStakingBalance, messages] = await getLedgerFromEpochForKey(key, epoch);
+    const controllerResponse: ControllerResponse = await getLedgerFromEpochForKey(key, epoch);
+    const responseData: Ledger = controllerResponse.responseData as Ledger;
     const response = {
-      stakes: stakes,
-      totalStakingBalance: totalStakingBalance,
-      messages: messages,
+      stakes: responseData.stakes,
+      totalStakingBalance: responseData.totalStakingBalance,
+      messages: controllerResponse.responseMessages as string[],
     }
     res.status(200).json(response);
   }
