@@ -38,7 +38,7 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
   }
   catch (error) {
     console.log(error);
-    res.status(500).send('An error occurred getting staking ledger information');
+    res.status(500).send('An error occurred processing staking ledger information');
   }
 });
 
