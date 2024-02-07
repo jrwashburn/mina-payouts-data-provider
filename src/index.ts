@@ -10,13 +10,13 @@ import blocksRouter from './routes/blocks';
 import stakingLedgerRouter from './routes/stakingLedgers';
 
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 100 requests per windowMs
+  windowMs: 2 * 60 * 1000, // 2 minutes
+  max: 50, // limit each IP to 50 requests per windowMs
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 });
-
 const app = express();
+app.set('trust proxy', 2)
 app.use(responseTime());
 app.use(helmet());
 app.use(limiter);

@@ -1,25 +1,26 @@
 import * as sldb from '../database/stakingLedgerDb';
-import { Stake, LedgerEntry } from '../models/stakes';
+import { Stake, LedgerEntry, Ledger } from '../models/stakes';
 import { MinaAddresses } from '../mina-addresses/minaAddressShareClass'
+import { ControllerResponse } from '../models/controller';
 
 let minaAddresses: MinaAddresses;
 (async () => {
   minaAddresses = await MinaAddresses.create('src/mina-addresses');
 })();
 
-export async function getLedgerFromHashForKey(ledgerHash: string, key: string): Promise<[Stake[], number, string[]]> {
-  const [stakes, totalStakingBalance] = await getStakes(ledgerHash, key);
-  const messages: string[] = [];
-  return [stakes, totalStakingBalance, messages];
+export async function getLedgerFromHashForKey(ledgerHash: string, key: string): Promise<ControllerResponse> {
+  const ledger: Ledger = await getStakes(ledgerHash, key);
+  const controllerResponse: ControllerResponse = { responseData: ledger }
+  return controllerResponse;
 }
 
-export async function getLedgerFromEpochForKey(key: string, epoch: number): Promise<[Stake[], number, string[]]> {
-  const [stakes, totalStakingBalance] = await getStakesByEpoch(key, epoch);
-  const messages: string[] = [];
-  return [stakes, totalStakingBalance, messages];
+export async function getLedgerFromEpochForKey(key: string, epoch: number): Promise<ControllerResponse> {
+  const ledger: Ledger = await getStakesByEpoch(key, epoch);
+  const controllerResponse: ControllerResponse = { responseData: ledger }
+  return controllerResponse;
 }
 
-async function getStakes(ledgerHash: string, key: string): Promise<[Stake[], number]> {
+async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
   try {
     let totalStakingBalance = 0;
     const ledger = await sldb.getStakingLedgers(ledgerHash, key);
@@ -37,14 +38,16 @@ async function getStakes(ledgerHash: string, key: string): Promise<[Stake[], num
       })
     );
 
-    return [stakers, totalStakingBalance];
+    return {
+      stakes: stakers, totalStakingBalance: totalStakingBalance
+    };
   } catch (error) {
     console.error('Error:', error);
     throw error;
   }
 }
 
-async function getStakesByEpoch(key: string, epoch: number): Promise<[Stake[], number]> {
+async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
   try {
     let totalStakingBalance = 0;
     const ledger = await sldb.getStakingLedgersByEpoch(key, epoch);
@@ -61,8 +64,7 @@ async function getStakesByEpoch(key: string, epoch: number): Promise<[Stake[], n
         };
       })
     );
-
-    return [stakers, totalStakingBalance];
+    return { stakes: stakers, totalStakingBalance: totalStakingBalance };
   } catch (error) {
     console.error('Error:', error);
     throw error;

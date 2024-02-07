@@ -3,10 +3,9 @@ ARG NODE_VERSION=20.10.0
 
 FROM node:${NODE_VERSION}-alpine
 WORKDIR /app
-
-# Copy the rest of the source files into the image.
-COPY . .
+COPY package*.json ./
 RUN npm install
+COPY . .
 RUN npm run build
 
 # Run the application.

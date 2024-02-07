@@ -12,6 +12,7 @@ export function createBlockQueryPool(useSSL: boolean) {
       port: configuration.blockDbQueryPort,
       ssl: {
         ca: configuration.blockDbQueryCertificate,
+        rejectUnauthorized: false,
       },
     });
   }
@@ -35,6 +36,7 @@ export function createLedgerQueryPool(useSSL: boolean) {
       port: configuration.ledgerDbQueryPort,
       ssl: {
         ca: configuration.ledgerDbQueryCertificate,
+        rejectUnauthorized: false,
       },
     });
   }
@@ -58,6 +60,7 @@ export function createStakingLedgerCommandPool(useSSL: boolean) {
       port: configuration.ledgerDbCommandPort,
       ssl: {
         ca: configuration.ledgerDbCommandCertificate,
+        rejectUnauthorized: false,
       },
     });
   }

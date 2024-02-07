@@ -29,6 +29,7 @@ spec:
       containers:
       - name: mppdp
         image: registry.digitalocean.com/jkwh1-mppdp/mppdp:v1.3.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
@@ -36,13 +37,13 @@ spec:
           value: "7140"
         - name: API_PORT
           value: "8080"
-        - name: LEDGER_UPLOAD_USER
-          value: "***USER NAME FOR BASIC AUTH LEDGER UPLOADER"
-        - name: LEDGER_UPLOAD_PASSWORD
+        - name: LEDGER_UPLOAD_API_USER
+          value: "ledger-upload-api-user"
+        - name: LEDGER_UPLOAD_API_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ledger-upload-password
-              key: LEDGER_UPLOAD_PASSWORD
+              name: ledger-upload-api-password
+              key: LEDGER_UPLOAD_API_PASSWORD
         - name: BLOCK_DB_QUERY_USER
           value: **USER NAME FOR BLOCK DB QUERY USER**
         - name: BLOCK_DB_QUERY_HOST
@@ -74,9 +75,9 @@ spec:
         - name: LEDGER_DB_QUERY_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: leger-db-query-password
+              name: ledger-db-query-password
               key: LEDGER_DB_QUERY_PASSWORD
-        - name: LEGER_DB_QUERY_REQUIRE_SSL
+        - name: LEDGER_DB_QUERY_REQUIRE_SSL
           value: "true"
         - name: LEDGER_DB_DB_QUERY_CERTIFICATE
           valueFrom:
@@ -94,9 +95,9 @@ spec:
         - name: LEDGER_DB_COMMAND_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: leger-db-command-password
+              name: ledger-db-command-password
               key: LEDGER_DB_COMMAND_PASSWORD
-        - name: LEGER_DB_COMMAND_REQUIRE_SSL
+        - name: LEDGER_DB_COMMAND_REQUIRE_SSL
           value: "true"
         - name: LEDGER_DB_DB_COMMAND_CERTIFICATE
           valueFrom:

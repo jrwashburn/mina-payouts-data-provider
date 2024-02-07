@@ -20,8 +20,8 @@ export async function getStakingLedgers(hash: string, key: string) {
 		timing_vesting_period, 
 		timing_vesting_increment 
 		FROM public.staking_ledger
-		WHERE hash = '${hash}' AND delegate_key = '${key}'`;
-  const result = await sldb.query(query);
+		WHERE hash = $1 AND delegate_key = $2`;
+  const result = await sldb.query(query, [hash, key]);
   return buildLedgerEntries(result.rows);
 }
 
@@ -36,14 +36,16 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_period, 
 		timing_vesting_increment 
 		FROM public.staking_ledger
-		WHERE delegate_key = '${key}' AND epoch = ${epoch}`;
-  const result = await sldb.query(query);
+		WHERE delegate_key = $1 AND epoch = $2`;
+  const result = await sldb.query(query, [key, epoch]);
   return buildLedgerEntries(result.rows);
 }
 
 export async function hashExists(hash: string) {
-  const query = `select count(1) from staking_ledger where hash='${hash}'`;
-  const result = await sldb.query(query);
+  console.log(`hashExists called with hash: ${hash}`)
+  const query = 'select count(1) from staking_ledger where hash=$1';
+  const result = await sldb.query(query, [hash]);
+  console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
   return result.rows[0].count > 0;
 }
 

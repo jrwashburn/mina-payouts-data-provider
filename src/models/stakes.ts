@@ -1,11 +1,14 @@
 import {ShareClass} from '../mina-addresses/minaAddressShareClass';
-
-export type Stake = {
+export interface Ledger {
+  stakes: Stake[];
+  totalStakingBalance: number;
+}
+export interface Stake {
   publicKey: string;
   stakingBalance: number;
   untimedAfterSlot: number;
   shareClass: ShareClass;
-};
+}
 interface Timing {
   initial_minimum_balance?: number;
   cliff_time?: number;
@@ -32,7 +35,6 @@ export interface LedgerEntry {
   timing?: Timing;
   permissions?: Permissions;
 }
-
 export interface TimedStakingLedgerResultRow {
   public_key: string;
   balance: number;

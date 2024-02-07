@@ -11,8 +11,8 @@ function loadConfiguration(): Configuration {
 
     slotsPerEpoch: Number(process.env.NUM_SLOTS_IN_EPOCH),
 
-    ledgerApiUser: String(process.env.LEDGER_API_USER),
-    ledgerApiPassword: String(process.env.LEDGER_API_PASSWORD),
+    ledgerUploadApiUser: String(process.env.LEDGER_UPLOAD_API_USER),
+    ledgerUploadApiPassword: String(process.env.LEDGER_UPLOAD_API_PASSWORD),
 
     blockDbQueryConnectionSSL: Boolean(process.env.BLOCK_DB_QUERY_REQUIRE_SSL),
     blockDbQueryCertificate: String(process.env.BLOCK_DB_QUERY_CERTIFICATE),
@@ -47,8 +47,8 @@ function validateEnv() {
 
     'NUM_SLOTS_IN_EPOCH',
 
-    'LEDGER_API_USER',
-    'LEDGER_API_PASSWORD',
+    'LEDGER_UPLOAD_API_USER',
+    'LEDGER_UPLOAD_API_PASSWORD',
 
     'BLOCK_DB_QUERY_REQUIRE_SSL',
     'BLOCK_DB_QUERY_USER',

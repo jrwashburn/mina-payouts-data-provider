@@ -3,8 +3,8 @@ export interface Configuration {
 
   slotsPerEpoch: number,
 
-  ledgerApiUser: string,
-  ledgerApiPassword: string,
+  ledgerUploadApiUser: string,
+  ledgerUploadApiPassword: string,
 
   blockDbQueryConnectionSSL: boolean,
   blockDbQueryCertificate: string,

@@ -6,4 +6,5 @@ node_modules/
 package-lock.json
 dist/
 deploy/deployment.yaml
-deploy/deploy.sh
+deploy/deploy*.sh
+deploy/*.crt
