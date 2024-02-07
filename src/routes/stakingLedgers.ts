@@ -34,9 +34,11 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
   try {
     const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, nextEpoch);
     const response = {
-      messages: controllerResponse.responseMessages,
+      messages: controllerResponse.responseMessages
     }
-    res.status(200).json(response);
+    const status = controllerResponse.responseCode || 200;
+    console.log('response:', response.messages);
+    res.status(status).json(response);
   }
   catch (error) {
     console.error(error);

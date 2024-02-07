@@ -42,8 +42,10 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 }
 
 export async function hashExists(hash: string) {
+  console.log(`hashExists called with hash: ${hash}`)
   const query = 'select count(1) from staking_ledger where hash=$1';
   const result = await sldb.query(query, [hash]);
+  console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
   return result.rows[0].count > 0;
 }
 
