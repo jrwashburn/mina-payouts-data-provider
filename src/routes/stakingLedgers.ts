@@ -67,23 +67,4 @@ router.get('/:ledgerHash', async (req, res) => {
 
 });
 
-router.get('/epoch/:epoch', async (req, res) => {
-  const key = req.query.key as string;
-  const epoch = parseInt(req.params.epoch);
-
-  try {
-    const controllerResponse: ControllerResponse = await getLedgerFromEpochForKey(key, epoch);
-    const responseData: Ledger = controllerResponse.responseData as Ledger;
-    const response = {
-      stakes: responseData.stakes,
-      totalStakingBalance: responseData.totalStakingBalance,
-      messages: controllerResponse.responseMessages as string[],
-    }
-    res.status(200).json(response);
-  }
-  catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred getting staking ledger information');
-  }
-});
 export default router;
