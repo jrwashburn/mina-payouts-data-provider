@@ -10,24 +10,24 @@ const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
 
 const blockQuery = `
     SELECT
-    blockheight,
-    statehash,
-    stakingledgerhash,
-    blockdatetime,
-    globalslot,
-    globalslotsincegenesis,
-    creatorpublickey,
-    winnerpublickey,
-    recevierpublickey,
-    coinbase,
-    feetransfertoreceiver,
-    feetransferfromcoinbase,
-    usercommandtransactionfees
-    FROM ConsensusChainForPayout
-    WHERE creatorpublickey = $1
-    AND blockheight >= $2
-    AND blockheight <= $3
-    ORDER BY blockheight DESC;
+      height,
+      state_hash,
+      staking_ledger_hash,
+      timestamp,
+      global_slot,
+      global_slot_since_genesis,
+      creator_public_key,
+      winner_public_key,
+      receiver_public_key,
+      coinbase,
+      fee_transfer_to_receiver,
+      fee_transfer_from_coinbase,
+      user_command_transaction_fees
+    FROM consensus_chain_for_payout
+    WHERE creator_public_key = $1
+      AND height >= $2
+      AND height <= $3
+    ORDER BY height DESC;
 `;
 
 const getNullParentsQuery = `
@@ -54,9 +54,9 @@ export async function getLatestBlock(){
 
 export async function getMinMaxBlocksInSlotRange(min: number, max:number){
   const query = `
-        SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight 
-        FROM ConsensusChainForPayout
-        WHERE globalSlotSinceGenesis between CAST($1 AS INTEGER) and CAST($2 AS INTEGER)`;
+        SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
+        FROM consensus_chain_for_payout
+        WHERE global_slot_since_genesis between CAST($1 AS INTEGER) and CAST($2 AS INTEGER)`;
   const result = await pool.query(query, [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
   const epochmaxblockheight = result.rows[0].epochmaxblockheight;
