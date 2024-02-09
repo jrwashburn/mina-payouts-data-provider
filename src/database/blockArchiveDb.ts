@@ -1,7 +1,7 @@
 // Relies on view ConsensusChainForPayout in the archive database 
 // view can be created wihth script in src/database/dbScripts/createMaterializedView.sql
 
-import { BlockSummary, Height } from '../models/blocks';
+import { Block, BlockSummary, Height } from '../models/blocks';
 import { createBlockQueryPool } from './databaseFactory'
 import configuration from '../configurations/environmentConfiguration';
 
@@ -10,24 +10,24 @@ const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
 
 const blockQuery = `
     SELECT
-    blockheight,
-    statehash,
-    stakingledgerhash,
-    blockdatetime,
-    globalslot,
-    globalslotsincegenesis,
-    creatorpublickey,
-    winnerpublickey,
-    recevierpublickey,
-    coinbase,
-    feetransfertoreceiver,
-    feetransferfromcoinbase,
-    usercommandtransactionfees
-    FROM ConsensusChainForPayout
-    WHERE creatorpublickey = $1
-    AND blockheight >= $2
-    AND blockheight <= $3
-    ORDER BY blockheight DESC;
+      blockHeight,
+      stateHash,
+      stakingLedgerHash,
+      blockDateTime,
+      slot,
+      globalSlotSinceGenesis,
+      creatorPublicKey,
+      winnerPublicKey,
+      recevierPublicKey,
+      coinbase,
+      feeTransferToReceiver,
+      feeTransferFromCoinbase,
+      userCommandTransactionFees
+    FROM consensus_chain_for_payout
+    WHERE creatorPublicKey = $1
+      AND blockHeight >= $2
+      AND blockHeight <= $3
+    ORDER BY blockHeight DESC;
 `;
 
 const getNullParentsQuery = `
@@ -54,8 +54,8 @@ export async function getLatestBlock(){
 
 export async function getMinMaxBlocksInSlotRange(min: number, max:number){
   const query = `
-        SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight 
-        FROM ConsensusChainForPayout
+        SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight
+        FROM consensus_chain_for_payout
         WHERE globalSlotSinceGenesis between CAST($1 AS INTEGER) and CAST($2 AS INTEGER)`;
   const result = await pool.query(query, [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
@@ -87,7 +87,22 @@ export async function getBlocks(key: string, minHeight:number, maxHeight: number
     );
   }
   const result = await pool.query(blockQuery, [key, minHeight, maxHeight]); 
-  return result.rows;
+  const blocks: Block[] = result.rows.map(row => ({
+    blockheight: Number(row.blockheight),
+    statehash: String(row.statehash),
+    stakingledgerhash: String(row.stakingledgerhash),
+    blockdatetime: Number(row.blockdatetime),
+    slot: Number(row.slot),
+    globalslotsincegenesis: Number(row.globalslotsincegenesis),
+    creatorpublickey: String(row.creatorpublickey),
+    winnerpublickey: String(row.winnerpublickey),
+    receiverpublickey: String(row.receiverpublickey),
+    coinbase: Number(row.coinbase),
+    feetransfertoreceiver: Number(row.feetransfertoreceiver),
+    feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
+    usercommandtransactionfees: Number(row.usercommandtransactionfees),
+  }));
+  return blocks;
 }
 
 export async function getEpoch(hash: string){

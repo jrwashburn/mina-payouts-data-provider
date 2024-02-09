@@ -1,4 +1,4 @@
-type Block = {
+export type Block = {
   blockheight: number;
   statehash: string;
   stakingledgerhash: string;
