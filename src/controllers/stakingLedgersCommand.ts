@@ -1,10 +1,21 @@
 import * as sldb from '../database/stakingLedgerDb';
+import * as db from '../database/blockArchiveDb';
 import { ControllerResponse } from '../models/controller';
 
 export async function uploadStakingLedger(file: Buffer, hash: string, userSpecifiedEpoch: number | null) {
   console.log('uploadStakingLedger called for hash:', hash);
-  const isAlreadyImported = await sldb.hashExists(hash, userSpecifiedEpoch);
+  const [isAlreadyImported, hashEpoch] = await sldb.hashExists(hash, userSpecifiedEpoch);
   if (isAlreadyImported) {
+    if (hashEpoch === null) {
+      try {
+        const epochToUpdate = await db.getEpoch(hash, userSpecifiedEpoch);
+        if (epochToUpdate > 0) {
+          await db.updateEpoch(hash, epochToUpdate);
+        }
+      } catch (error) {
+        console.error('Error updating epoch:', error);
+      }
+    }
     console.log(`File with hash ${hash} for user specified epoch {userSpecifiedEpoch} was already imported`);
     const controllerResponse: ControllerResponse = { responseMessages: [`File with hash ${hash} was already imported`], responseCode: 409 }
     return controllerResponse;

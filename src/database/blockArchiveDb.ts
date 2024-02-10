@@ -105,7 +105,7 @@ export async function getBlocks(key: string, minHeight:number, maxHeight: number
   return blocks;
 }
 
-export async function getEpoch(hash: string, userSpecifiedEpoch: number | null) {
+export async function getEpoch(hash: string, userSpecifiedEpoch: number | null): Promise<number> {
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
 
   const query = `
@@ -129,7 +129,7 @@ export async function getEpoch(hash: string, userSpecifiedEpoch: number | null) 
       if (epoch + 1 == nextEpoch) {
         return epoch;
       }
-      else if (epoch == 0 && (userSpecifiedEpoch == 0 || userSpecifiedEpoch == 1)) {
+      else if (epoch === 0 && (userSpecifiedEpoch === 0 || userSpecifiedEpoch === 1)) {
         return userSpecifiedEpoch;
       }
       else {
@@ -143,6 +143,16 @@ export async function getEpoch(hash: string, userSpecifiedEpoch: number | null) 
     throw error;
   }
   return -1;
+}
+
+export async function updateEpoch(hash: string, epoch: number): Promise<void> {
+  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
+  try {
+    await pool.query(query, [epoch, hash]);
+  } catch (error) {
+    console.error('Error updating epoch:', error);
+    throw new Error('Error updating epoch');
+  }
 }
 
 async function getHeightMissing(minHeight: number, maxHeight: number) {
