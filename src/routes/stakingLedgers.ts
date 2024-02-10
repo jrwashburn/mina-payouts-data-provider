@@ -5,7 +5,7 @@ import configuration from '../configurations/environmentConfiguration';
 import { getLedgerFromHashForKey, getLedgerFromEpochForKey } from '../controllers/stakingLedgersQuery';
 import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
 import { ControllerResponse } from '../models/controller';
-import { Ledger } from '../models/stakes';
+import { Ledger, LedgerEntry } from '../models/stakes';
 
 const router = express.Router();
 const upload = multer({
@@ -33,7 +33,8 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
     const userSpecifiedEpoch: number | null = req.query.epoch as unknown as number | null;
     console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and epoch ${userSpecifiedEpoch}`);
     try {
-      const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, userSpecifiedEpoch);
+      const ledgerJson: LedgerEntry[] = JSON.parse(req.file.buffer.toString('utf8'));
+      const controllerResponse: ControllerResponse = await uploadStakingLedger(ledgerJson, hash, userSpecifiedEpoch);
       const response = {
         messages: controllerResponse.responseMessages
       }
