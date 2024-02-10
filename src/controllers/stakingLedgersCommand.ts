@@ -1,8 +1,9 @@
 import * as sldb from '../database/stakingLedgerDb';
 import * as db from '../database/blockArchiveDb';
 import { ControllerResponse } from '../models/controller';
+import { LedgerEntry } from '../models/stakes';
 
-export async function uploadStakingLedger(file: Buffer, hash: string, userSpecifiedEpoch: number | null) {
+export async function uploadStakingLedger(ledgerJson: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null) {
   console.log('uploadStakingLedger called for hash:', hash);
   const [isAlreadyImported, hashEpoch] = await sldb.hashExists(hash, userSpecifiedEpoch);
   if (isAlreadyImported) {
@@ -23,7 +24,7 @@ export async function uploadStakingLedger(file: Buffer, hash: string, userSpecif
   else {
     try {
       console.log(`Processing file ${hash}`);
-      await loadData(file, hash, userSpecifiedEpoch);
+      await loadData(ledgerJson, hash, userSpecifiedEpoch);
       console.log(`Finished processing file ${hash}`);
       const controllerResponse: ControllerResponse = { responseMessages: [`Received file and processing for hash ${hash}`] };
       return (controllerResponse);
@@ -34,13 +35,10 @@ export async function uploadStakingLedger(file: Buffer, hash: string, userSpecif
   }
 }
 
-async function loadData(ledger: Buffer, hash: string, userSpecifiedEpoch: number | null) {
+async function loadData(ledger: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null) {
   console.log('loadData called');
   try {
-    const jsonData = ledger.toString('utf8');
-    console.log('jsonData:', jsonData.slice(0, 100)); // log the first 100 characters
-    const dataArray = JSON.parse(jsonData);
-    await sldb.insertBatch(dataArray, hash, userSpecifiedEpoch);
+    await sldb.insertBatch(ledger, hash, userSpecifiedEpoch);
   } catch (error) {
     console.error('Error parsing json or inserting batch:', error);
     throw new Error('Error parsing json or inserting batch');
