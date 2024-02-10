@@ -121,8 +121,10 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSp
     }
     await client.query('COMMIT');
   } catch (error) {
+    console.log('Failed to insert batch, starting rollback');
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
+    throw new Error('Failed to insert batch');
   }
 }
 

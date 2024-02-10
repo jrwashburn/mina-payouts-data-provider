@@ -31,7 +31,7 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
     }
     const hash: string = req.params.ledgerHash;
     const userSpecifiedEpoch: number | null = req.query.epoch as unknown as number | null;
-    console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and nextepoch ${req.query.nextepoch}`);
+    console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and epoch ${userSpecifiedEpoch}`);
     try {
       const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, userSpecifiedEpoch);
       const response = {

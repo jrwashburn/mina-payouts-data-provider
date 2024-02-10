@@ -18,8 +18,7 @@ export async function uploadStakingLedger(file: Buffer, hash: string, userSpecif
       return (controllerResponse);
     } catch (error) {
       console.error('Error processing file:', error);
-      const controllerResponse: ControllerResponse = { responseError: 'Error processing file', responseCode: 500 }
-      return controllerResponse;
+      throw new Error('Error processing file');
     }
   }
 }
@@ -33,7 +32,6 @@ async function loadData(ledger: Buffer, hash: string, userSpecifiedEpoch: number
     await sldb.insertBatch(dataArray, hash, userSpecifiedEpoch);
   } catch (error) {
     console.error('Error parsing json or inserting batch:', error);
-    const controllerResponse: ControllerResponse = { responseError: 'Error parsing json or inserting batch', responseCode: 500 }
-    return controllerResponse;
+    throw new Error('Error parsing json or inserting batch');
   }
 }
