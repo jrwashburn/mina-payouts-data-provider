@@ -1,5 +1,5 @@
 // Relies on view ConsensusChainForPayout in the archive database 
-// view can be created wihth script in src/database/dbScripts/createMaterializedView.sql
+// view can be created with script in deploy/db-setup/ConsensusChainForPayout.sql
 
 import { Block, BlockSummary, Height } from '../models/blocks';
 import { createBlockQueryPool } from './databaseFactory'
@@ -105,7 +105,7 @@ export async function getBlocks(key: string, minHeight:number, maxHeight: number
   return blocks;
 }
 
-export async function getEpoch(hash: string){
+export async function getEpoch(hash: string, userSpecifiedEpoch: number | null) {
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
 
   const query = `
@@ -126,19 +126,22 @@ export async function getEpoch(hash: string){
 
       const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
       const nextEpoch = Math.ceil(maxGlobalSlot / slotsInEpoch);
-
-      if(epoch+1 == nextEpoch){
+      if (epoch + 1 == nextEpoch) {
         return epoch;
       }
-      else{
-        throw Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs`);
+      else if (epoch == 0 && (userSpecifiedEpoch == 0 || userSpecifiedEpoch == 1)) {
+        return userSpecifiedEpoch;
+      }
+      else {
+        throw new Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs. 
+          If this is the genesis ledger, please specify the epoch in the request.
+          Epoch: ${epoch}, Next Epoch: ${nextEpoch}, User Specified Epoch: ${userSpecifiedEpoch}, minGlobalSlot: ${minGlobalSlot}, maxGlobalSlot: ${maxGlobalSlot}`);
       }
     }
-  }catch(error){
+  } catch (error) {
     console.log(`Error getting epoch ${error}`);
     throw error;
   }
-
   return -1;
 }
 
