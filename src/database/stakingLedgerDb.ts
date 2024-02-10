@@ -41,17 +41,30 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
   return buildLedgerEntries(result.rows);
 }
 
-export async function hashExists(hash: string) {
+export async function hashExists(hash: string, userSpecifiedEpoch: number | null) {
   console.log(`hashExists called with hash: ${hash}`)
   const query = 'select count(1) from staking_ledger where hash=$1';
   const result = await sldb.query(query, [hash]);
+  let returnValue = result.rows[0].count > 0;
   console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
-  return result.rows[0].count > 0;
+  if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
+    const query = 'select count(1) from staking_ledger where hash=$1 and epoch=$2';
+    const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
+    console.log('hashExists for user specified epoch result:', result.rows[0], result.rows[0].count > 0)
+    returnValue = result.rows[0].count > 0;
+  }
+  return returnValue;
 }
 
-export async function insertBatch(dataArray: LedgerEntry[], hash: string, nextEpoch: number | null) {
+export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null) {
   console.log(`insertBatch called: ${dataArray.length} records to insert.`);
-  const epoch = await db.getEpoch(hash);
+  let epoch = -1;
+  try {
+    epoch = await db.getEpoch(hash, userSpecifiedEpoch);
+  } catch (error) {
+    console.error('Error getting epoch:', error);
+    throw new Error('Error getting epoch');
+  }
   const client = await commanddb.connect();
   try {
     await client.query('BEGIN');
@@ -84,7 +97,7 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, nextEp
 				permissions_set_verification_key ) VALUES ${values.join(', ')}`;
       await client.query(query, batch.flatMap((item) => [
         hash,
-        epoch == -1 ? nextEpoch : epoch,
+        epoch == -1 ? userSpecifiedEpoch : epoch,
         item.pk,
         item.balance,
         item.delegate,
@@ -108,8 +121,10 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, nextEp
     }
     await client.query('COMMIT');
   } catch (error) {
+    console.log('Failed to insert batch, starting rollback');
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
+    throw new Error('Failed to insert batch');
   }
 }
 

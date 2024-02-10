@@ -11,7 +11,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 150 * 1024 * 1024, // limit file size to 5MB
+    fileSize: 150 * 1024 * 1024, // limit file size to 150MB
   },
 });
 const user = configuration.ledgerUploadApiUser;
@@ -25,20 +25,26 @@ const auth = basicAuth({
 });
 
 router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) => {
-  if (!req.file || !req.file.buffer) {
-    return res.status(400).send('No file uploaded');
-  }
-  const hash: string = req.params.ledgerHash;
-  const nextEpoch: number | null = req.query.nextepoch as unknown as number | null;
-  console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and nextepoch ${req.query.nextepoch}`);
   try {
-    const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, nextEpoch);
-    const response = {
-      messages: controllerResponse.responseMessages
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).send('No file uploaded');
     }
-    const status = controllerResponse.responseCode || 200;
-    console.log('response:', response.messages);
-    res.status(status).json(response);
+    const hash: string = req.params.ledgerHash;
+    const userSpecifiedEpoch: number | null = req.query.epoch as unknown as number | null;
+    console.log(`uploading ${req.file.originalname} with hash ${req.params.hash} and epoch ${userSpecifiedEpoch}`);
+    try {
+      const controllerResponse: ControllerResponse = await uploadStakingLedger(req.file.buffer, hash, userSpecifiedEpoch);
+      const response = {
+        messages: controllerResponse.responseMessages
+      }
+      const status = controllerResponse.responseCode || 200;
+      console.log('response:', response.messages);
+      res.status(status).json(response);
+    }
+    catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred uploading staking ledger');
+    }
   }
   catch (error) {
     console.error(error);
