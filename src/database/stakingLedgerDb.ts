@@ -21,8 +21,13 @@ export async function getStakingLedgers(hash: string, key: string) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE hash = $1 AND delegate_key = $2`;
-  const result = await sldb.query(query, [hash, key]);
-  return buildLedgerEntries(result.rows);
+  try {
+    const result = await sldb.query(query, [hash, key]);
+    return buildLedgerEntries(result.rows);
+  } catch (error) {
+    console.error('Error getting staking ledgers by Hash:', error);
+    throw new Error('Error getting staking ledgers by Hash');
+  }
 }
 
 export async function getStakingLedgersByEpoch(key: string, epoch: number) {
@@ -37,26 +42,42 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
-  const result = await sldb.query(query, [key, epoch]);
-  return buildLedgerEntries(result.rows);
-}
-
-export async function hashExists(hash: string, userSpecifiedEpoch: number | null) {
-  console.log(`hashExists called with hash: ${hash}`)
-  const query = 'select count(1) from staking_ledger where hash=$1';
-  const result = await sldb.query(query, [hash]);
-  let returnValue = result.rows[0].count > 0;
-  console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
-  if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
-    const query = 'select count(1) from staking_ledger where hash=$1 and epoch=$2';
-    const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
-    console.log('hashExists for user specified epoch result:', result.rows[0], result.rows[0].count > 0)
-    returnValue = result.rows[0].count > 0;
+  try {
+    const result = await sldb.query(query, [key, epoch]);
+    return buildLedgerEntries(result.rows);    
+  } catch (error) {
+    console.error('Error getting staking ledgers by Epoch:', error);
+    throw new Error('Error getting staking ledgers by Epoch');
   }
-  return returnValue;
 }
 
-export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null) {
+export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number | null]> {
+  console.log(`hashExists called with hash: ${hash}`)
+  try {
+    const query = 'select count(*) from staking_ledger where hash=$1';
+    const result = await sldb.query(query, [hash]);
+    let hashEpoch = -1;
+    let hashExists = result.rows[0].count > 0;
+    console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
+    if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
+      const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
+      const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
+      console.log('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
+      hashExists = result.rows[0].count > 0;
+    }
+    if (hashExists) {
+      const query = 'select max(epoch) as epoch from staking_ledger where hash=$1';
+      const result = await sldb.query(query, [hash]);
+      hashEpoch = result.rows[0].epoch
+    }
+    return [hashExists, hashEpoch];
+  } catch (error) {
+    console.error('Error checking if hash exists:', error);
+    throw new Error('Error checking if hash exists');
+  }
+}
+
+export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
   console.log(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
   try {
@@ -128,7 +149,7 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSp
   }
 }
 
-function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]) {
+function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEntry[] {
   const ledgerEntries: LedgerEntry[] = [];
   for (const row of resultRows) {
     const stakingLedger: LedgerEntry = {
