@@ -5,7 +5,7 @@ This application provides an API to that provides the data needed by [mina-pool-
 
 The API exposes resources for staking-ledgers, blocks, and consensus (current tip).
 
-Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/blob/deployment/APIExamples.md)
+Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/blob/main/APIExamples.md)
 
 The application assumes the availability of a mina archive database as well as a mina stakes database that is maintained separately. The stakes database can be created using the script in /database-setup/stakesDB.sql. The staking ledger for each epoch must be extracted from a mina node and uploaded to the staking-ledgers endpoint each epoch (or in advance.)
 
