@@ -7,8 +7,8 @@ import configuration from '../configurations/environmentConfiguration';
 const router = express.Router();
 
 router.get('/:epoch/', async (req, res) => {
-  
   const epoch: number = parseInt(req.params.epoch);
+  console.log('Getting epoch data for epoch:', epoch);
   
   try {
     const messages: { [key: string]: string }[] = [];
@@ -23,6 +23,7 @@ router.get('/:epoch/', async (req, res) => {
       maxBlockHeight: epochMaxBlockHeight,
       messages: messages,
     }
+    console.log('Epoch data:', response);
     res.status(200).json(response);
   } catch (err) {
     console.error(err);
