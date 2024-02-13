@@ -9,7 +9,11 @@ router.get('/', async (req, res) => {
   try {
     const blocks = await db.getBlocks(key, minHeight, maxHeight);
     const response = { blocks, messages: [] };
-    console.log('Blocks:', response.blocks[0].blockheight, 'to', response.blocks[response.blocks.length - 1].blockheight);
+    if (blocks.length > 0) {
+      console.log('Blocks:', response.blocks[0].blockheight, 'to', response.blocks[response.blocks.length - 1].blockheight);
+    } else {
+      console.log('No blocks returned');
+    }
     res.status(200).json(response);
   }
   catch (error) {
