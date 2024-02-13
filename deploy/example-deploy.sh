@@ -19,15 +19,24 @@ kubectl create secret generic ledger-db-command-certificate --from-file LEDGER_D
 
 # Read version from package.json
 VERSION=$(node -p "require('./package.json').version")
+IMAGE_NAME=[container-registry]/[repository]/mppdp:v$VERSION
+if docker manifest inspect $IMAGE_NAME > /dev/null; then
+  echo "Image with version $VERSION already exists. Will force a rollout restart to pull updated image."
+  ROLLOUT_RESTART=true
+fi
 sed -i '' "s|mppdp:v.*|mppdp:v$VERSION|g" deploy/deployment.yaml
-echo "Version updated to $VERSION in deployment files."
-
-docker build -f ./deploy/Dockerfile.linux -t [myreg]/mppdp:v$VERSION .
-docker tag [myreg]/mppdp:v$VERSION [registry.mycloud.com]/[repo]/mppdp:v$VERSION
-docker push [registry.mycloud.com]/[repo]/mppdp:v$VERSION
-kubectl apply -f ./deploy/[realdeployment].yaml
-echo Finished deploying, waiting 10 seconds for deployments to restart pods.
-sleep 10
+echo "Version updated to $VERSION in deployment.yaml and used for container versions."
+docker build -f ./deploy/Dockerfile.linux -t [container-registry]/mppdp:v$VERSION .
+docker tag [container-registry]/mppdp:v$VERSION [container-registry]/[repository]/mppdp:v$VERSION
+docker push [container-registry]/[repository]/mppdp:v$VERSION
+kubectl apply -f ./deploy/[example-do-deployment].yaml
+if [ "$ROLLOUT_RESTART" = true ]; then
+  echo "Rollout Restart to pull latest image."
+  kubectl rollout restart deployment mppdp
+fi
+echo Finished deploying, waiting 30 seconds for deployments to restart pods.
+sleep 30
+kubectl get pods
 for POD in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}')
 do
   echo "Logs for $POD:"
