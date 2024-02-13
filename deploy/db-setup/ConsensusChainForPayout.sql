@@ -81,7 +81,7 @@ FROM
             buc.block_id
     ) btf ON b.id = btf.block_id
 WHERE
-    b.id IN (
+    EXISTS (
         WITH RECURSIVE chain AS (
             SELECT
                 id,
@@ -117,9 +117,10 @@ WHERE
                 INNER JOIN chain ON b.id = chain.parent_id
         )
         SELECT
-            distinct c.id
+            1
         FROM
             chain c
+        WHERE c.id = b.id 
     )
 ORDER BY
     height DESC;

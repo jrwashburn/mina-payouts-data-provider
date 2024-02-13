@@ -63,8 +63,10 @@ export async function getMinMaxBlocksInSlotRange(min: number, max:number){
   return [epochminblockheight, epochmaxblockheight];
 }
 
-export async function getBlocks(key: string, minHeight:number, maxHeight: number){
+export async function getBlocks(key: string, minHeight: number, maxHeight: number) {
+  console.log('Getting blocks in blockArchiveDb.ts for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
   const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
+  console.log('missingHeights:', missingHeights);
   if (
     (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
         (minHeight > 0 && missingHeights.length > 0)
@@ -76,6 +78,7 @@ export async function getBlocks(key: string, minHeight:number, maxHeight: number
     );
   }
   const nullParents = await getNullParents(minHeight, maxHeight);
+  console.log('nullParents:', nullParents);
   if (
     (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
         (minHeight > 0 && nullParents.length > 0)
@@ -86,6 +89,7 @@ export async function getBlocks(key: string, minHeight:number, maxHeight: number
       )}`,
     );
   }
+  console.log('calling blockQuery');
   const result = await pool.query(blockQuery, [key, minHeight, maxHeight]); 
   const blocks: Block[] = result.rows.map(row => ({
     blockheight: Number(row.blockheight),
