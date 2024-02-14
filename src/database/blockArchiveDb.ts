@@ -1,6 +1,3 @@
-// Relies on view ConsensusChainForPayout in the archive database 
-// view can be created with script in deploy/db-setup/ConsensusChainForPayout.sql
-
 import { Block, BlockSummary, Height } from '../models/blocks';
 import { createBlockQueryPool } from './databaseFactory'
 import configuration from '../configurations/environmentConfiguration';
@@ -160,9 +157,27 @@ export async function getLatestBlock(): Promise<BlockSummary> {
 
 export async function getMinMaxBlocksInSlotRange(min: number, max: number): Promise<[number, number]> {
   const query = `
-        SELECT min(blockHeight) as epochminblockheight, max(blockHeight) as epochmaxblockheight
-        FROM consensus_chain_for_payout
-        WHERE globalSlotSinceGenesis between CAST($1 AS INTEGER) and CAST($2 AS INTEGER)`;
+    SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
+    FROM
+    blocks b
+    WHERE
+      EXISTS (
+        WITH RECURSIVE chain AS (
+          SELECT id FROM blocks b
+          WHERE b.height = ( select MAX(height) from blocks )
+          UNION ALL
+          SELECT b.id,
+          FROM blocks b
+          INNER JOIN chain ON b.id = chain.parent_id
+        )
+        SELECT
+          1
+        FROM
+          chain c
+        WHERE c.id = b.id
+      )
+    AND global_slot_since_genesis >= CAST($1 AS INTEGER)
+    AND global_slot_since_genesis <= CAST($2 AS INTEGER)`;
   const result = await pool.query(query, [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
   const epochmaxblockheight = result.rows[0].epochmaxblockheight;
