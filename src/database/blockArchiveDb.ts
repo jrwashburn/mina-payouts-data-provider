@@ -163,10 +163,11 @@ export async function getMinMaxBlocksInSlotRange(min: number, max: number): Prom
     WHERE
       EXISTS (
         WITH RECURSIVE chain AS (
-          SELECT id FROM blocks b
+          SELECT id, b.parent_id
+          FROM blocks b
           WHERE b.height = ( select MAX(height) from blocks )
           UNION ALL
-          SELECT b.id,
+          SELECT b.id, b.parent_id
           FROM blocks b
           INNER JOIN chain ON b.id = chain.parent_id
         )
@@ -176,8 +177,8 @@ export async function getMinMaxBlocksInSlotRange(min: number, max: number): Prom
           chain c
         WHERE c.id = b.id
       )
-    AND global_slot_since_genesis >= CAST($1 AS INTEGER)
-    AND global_slot_since_genesis <= CAST($2 AS INTEGER)`;
+    AND b.global_slot_since_genesis >= CAST($1 AS INTEGER)
+    AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)`;
   const result = await pool.query(query, [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
   const epochmaxblockheight = result.rows[0].epochmaxblockheight;
