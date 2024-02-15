@@ -71,10 +71,19 @@ The staking-ledgers POST endpoint uses basic authentication to authenticate the 
 Apply deployment  
 `kubectl apply -f ./deploy/deployment.yaml`  
 
-# Maintenance
+# Maintenance  
 
-Staking ledgers must be kept up to date each epoch. The /staking-ledgers endpoint also accepts a form post to get a staking ledger file and apply it. This is on an endpoing that has basic authentication.
+## Staking Ledgers  
 
-The ledgers can be posted via script - for example:
+### Database  
 
-curl -u "mppdpsl:mppdpsl-password" -X POST -H "Content-Type: multipart/form-data" -F "jsonFile=@./jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF.json" http://api.minastakes.com/staking-ledgers/jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF
+The staking ledgers are stored in a database instead of using json files. The databse must be created when the projec is deployed and is assumed to be an external dependency similar to the archive databsae. The scripts to create the database are in /deploy/db-setup/StakesDB.sql. The script simple creates the single empty table used by this process. The ledgers can be stored by uploading them to the API.  
+
+### Uploading Staking Ledgers  
+Staking ledgers must be kept up to date each epoch. The /staking-ledgers endpoint also accepts a form post to get a staking ledger file and apply it. This is on an endpoing that has basic authentication.  
+
+The ledgers can be posted via script - for example:  
+
+curl -u "mppdpsl:mppdpsl-password" -X POST -H "Content-Type: multipart/form-data" -F "jsonFile=@./jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF.json" http://api.minastakes.com/staking-ledgers/jwV7BsK9rBf5uRWqMZmWKVAUcEcd7pDAo9NCFTrvSvXRjHCwypF  
+
+When a ledger is being posted for an epoch that has not started yet, the api cannot determine the epoch; so additional parameters are supported to supply a user-specified epoch number with a query string parameter. For example: http://api.minastakes.com/staking-ledgers/[hash]]?userSpecifiedEpoch=[n]  
