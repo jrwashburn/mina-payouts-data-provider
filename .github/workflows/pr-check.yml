@@ -3,30 +3,29 @@ name: PR Check
 
 on:
   pull_request:
-    branches: [ main ]
-  push:
+    branches: [main]
 
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Checkout submodules
-      run: git submodule update --init --recursive
-      
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '21.6.1'
+      - name: Checkout submodules
+        run: git submodule update --init --recursive
 
-    - name: Install dependencies
-      run: npm install
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "21.6.1"
 
-    - name: Run linter
-      run: npm run lint
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run build
-      run: npm run build
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run build
+        run: npm run build

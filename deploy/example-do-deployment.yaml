@@ -76,6 +76,8 @@ spec:
             secretKeyRef:
               name: block_db_query_certificate
               key: BLOCK_DB_QUERY_CERTIFICATE
+        - name: BLOCK_DB_VERSION
+          value: "v1"
         - name: LEDGER_DB_QUERY_USER
           value: **USER NAME FOR LEDGER DB QUERY USER**
         - name: LEDGER_DB_QUERY_HOST

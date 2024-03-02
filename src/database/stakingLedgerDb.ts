@@ -44,7 +44,7 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		WHERE delegate_key = $1 AND epoch = $2`;
   try {
     const result = await sldb.query(query, [key, epoch]);
-    return buildLedgerEntries(result.rows);    
+    return buildLedgerEntries(result.rows);
   } catch (error) {
     console.error('Error getting staking ledgers by Epoch:', error);
     throw new Error('Error getting staking ledgers by Epoch');
@@ -168,3 +168,14 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
   }
   return ledgerEntries;
 }
+
+export async function updateEpoch(hash: string, epoch: number): Promise<void> {
+  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
+  try {
+    await commanddb.query(query, [epoch, hash]);
+  } catch (error) {
+    console.error('Error updating epoch:', error);
+    throw new Error('Error updating epoch');
+  }
+}
+
