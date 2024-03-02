@@ -7,7 +7,7 @@ The API exposes resources for staking-ledgers, blocks, and consensus (current ti
 
 Example return values can be seen [here](https://github.com/jrwashburn/mina-payouts-data-provider/blob/main/APIExamples.md)
 
-The application assumes the availability of a mina archive database as well as a mina stakes database that is maintained separately. The stakes database can be created using the script in /database-setup/stakesDB.sql. The staking ledger for each epoch must be extracted from a mina node and uploaded to the staking-ledgers endpoint each epoch (or in advance.)
+The application assumes the availability of a mina archive database as well as a mina stakes database that is maintained separately. The stakes database can be created using the script in /deploy/db-setup/stakesDB.sql. The staking ledger for each epoch must be extracted from a mina node and uploaded to the staking-ledgers endpoint each epoch (or in advance.)
 
 ## consensus
 
