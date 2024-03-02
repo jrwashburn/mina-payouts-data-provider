@@ -13,6 +13,7 @@ export interface Configuration {
   blockDbQueryHost: string,
   blockDbQueryPort: number,
   blockDbQueryName: string,
+  blockDbVersion: string,
 
   ledgerDbQueryConnectionSSL: boolean,
   ledgerDbQueryCertificate: string,

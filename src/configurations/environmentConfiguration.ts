@@ -1,5 +1,5 @@
-import {config} from 'dotenv';
-import {Configuration} from '../models/configuration';
+import { config } from 'dotenv';
+import { Configuration } from '../models/configuration';
 
 const configuration: Configuration = loadConfiguration();
 
@@ -21,6 +21,7 @@ function loadConfiguration(): Configuration {
     blockDbQueryHost: String(process.env.BLOCK_DB_QUERY_HOST),
     blockDbQueryPort: Number(process.env.BLOCK_DB_QUERY_PORT),
     blockDbQueryName: String(process.env.BLOCK_DB_QUERY_NAME),
+    blockDbVersion: String(process.env.BLOCK_DB_VERSION),
 
     ledgerDbQueryConnectionSSL: Boolean(process.env.LEDGER_DB_QUERY_REQUIRE_SSL),
     ledgerDbQueryCertificate: String(process.env.LEDGER_DB_QUERY_CERTIFICATE),
@@ -56,6 +57,7 @@ function validateEnv() {
     'BLOCK_DB_QUERY_HOST',
     'BLOCK_DB_QUERY_PORT',
     'BLOCK_DB_QUERY_NAME',
+    'BLOCK_DB_VERSION',
 
     'LEDGER_DB_QUERY_REQUIRE_SSL',
     'LEDGER_DB_QUERY_USER',

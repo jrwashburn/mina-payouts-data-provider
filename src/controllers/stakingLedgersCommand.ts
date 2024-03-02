@@ -11,7 +11,7 @@ export async function uploadStakingLedger(ledgerJson: LedgerEntry[], hash: strin
       try {
         const epochToUpdate = await db.getEpoch(hash, userSpecifiedEpoch);
         if (epochToUpdate > 0) {
-          await db.updateEpoch(hash, epochToUpdate);
+          await sldb.updateEpoch(hash, epochToUpdate);
         }
       } catch (error) {
         console.error('Error updating epoch:', error);

@@ -1,6 +1,6 @@
 import express from 'express';
 import * as db from '../database/blockArchiveDb';
-import {BlockSummary} from '../models/blocks';
+import { BlockSummary } from '../models/blocks';
 import configuration from '../configurations/environmentConfiguration';
 
 
@@ -9,10 +9,10 @@ const router = express.Router();
 router.get('/:epoch/', async (req, res) => {
   const epoch: number = parseInt(req.params.epoch);
   console.log('Getting epoch data for epoch:', epoch);
-  
+
   try {
     const messages: { [key: string]: string }[] = [];
-    const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch); 
+    const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch);
     const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot);
     const blockSummary: BlockSummary = await db.getLatestBlock();
     if (blockSummary.blockheight - epochMaxBlockHeight < 20) {
