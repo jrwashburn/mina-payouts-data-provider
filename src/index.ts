@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import responseTime from 'response-time';
@@ -21,10 +22,10 @@ app.use(responseTime());
 app.use(helmet());
 app.use(limiter);
 
-app.use('/consensus', consensusRouter);
-app.use('/epoch', epochRouter);
-app.use('/blocks', blocksRouter);
-app.use('/staking-ledgers', stakingLedgerRouter);
+app.use('/consensus', cors(), consensusRouter);
+app.use('/epoch', cors(), epochRouter);
+app.use('/blocks', cors(), blocksRouter);
+app.use('/staking-ledgers', cors(), stakingLedgerRouter);
 
 app.listen(configuration.port, () => {
   console.log(`Mina Pool Payout Data Provider listening on ${configuration.port}`);
