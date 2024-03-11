@@ -8,12 +8,16 @@ const router = express.Router();
 
 router.get('/:epoch/', async (req, res) => {
   const epoch: number = parseInt(req.params.epoch);
-  console.log('Getting epoch data for epoch:', epoch);
+  const { fork = 0 } = req.query as unknown as { fork: number };
+  if (isNaN(epoch) || isNaN(fork)) {
+    res.status(400).send('Invalid epoch or fork');
+  }
+  console.log('Getting epoch data for epoch:', epoch, 'fork:', fork);
 
   try {
     const messages: { [key: string]: string }[] = [];
     const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch);
-    const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot);
+    const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot, fork);
     const blockSummary: BlockSummary = await db.getLatestBlock();
     if (blockSummary.blockheight - epochMaxBlockHeight < 20) {
       messages.push({ warning: 'Epoch is in progress' });
@@ -31,7 +35,7 @@ router.get('/:epoch/', async (req, res) => {
   }
 });
 
-function getMinMaxSlotHeight(epoch: number) {
+function getMinMaxSlotHeight(epoch: number): [number, number] {
   const slotsInEpoch = configuration.slotsPerEpoch;
   const min = slotsInEpoch * epoch;
   const max = slotsInEpoch * (epoch + 1) - 1;

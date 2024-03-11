@@ -12,8 +12,8 @@ export async function getLatestBlock(): Promise<BlockSummary> {
   return blockSummary;
 }
 
-export async function getMinMaxBlocksInSlotRange(min: number, max: number): Promise<[number, number]> {
-  const result = await pool.query(getMinMaxBlocksInSlotRangeQuery, [min, max]);
+export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork: number): Promise<[number, number]> {
+  const result = await pool.query(getMinMaxBlocksInSlotRangeQuery(fork), [min, max]);
   const epochminblockheight = result.rows[0].epochminblockheight;
   const epochmaxblockheight = result.rows[0].epochmaxblockheight;
   return [epochminblockheight, epochmaxblockheight];
