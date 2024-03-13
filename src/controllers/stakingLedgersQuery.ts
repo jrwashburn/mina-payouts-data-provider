@@ -21,54 +21,44 @@ export async function getLedgerFromEpochForKey(key: string, epoch: number): Prom
 }
 
 async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
-  try {
-    let totalStakingBalance = 0;
-    const ledger = await sldb.getStakingLedgers(ledgerHash, key);
+  let totalStakingBalance = 0;
+  const ledger = await sldb.getStakingLedgers(ledgerHash, key);
 
-    const stakers: Stake[] = await Promise.all(
-      ledger.map(async (stake: LedgerEntry) => {
-        const balance = Number(stake.balance);
-        totalStakingBalance += balance;
-        return {
-          publicKey: stake.pk,
-          stakingBalance: balance,
-          untimedAfterSlot: await calculateUntimedSlot(stake),
-          shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
-        };
-      })
-    );
+  const stakers: Stake[] = await Promise.all(
+    ledger.map(async (stake: LedgerEntry) => {
+      const balance = Number(stake.balance);
+      totalStakingBalance += balance;
+      return {
+        publicKey: stake.pk,
+        stakingBalance: balance,
+        untimedAfterSlot: await calculateUntimedSlot(stake),
+        shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
+      };
+    })
+  );
 
-    return {
-      stakes: stakers, totalStakingBalance: totalStakingBalance
-    };
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
-  }
+  return {
+    stakes: stakers, totalStakingBalance: totalStakingBalance
+  };
 }
 
 async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
-  try {
-    let totalStakingBalance = 0;
-    const ledger = await sldb.getStakingLedgersByEpoch(key, epoch);
+  let totalStakingBalance = 0;
+  const ledger = await sldb.getStakingLedgersByEpoch(key, epoch);
 
-    const stakers: Stake[] = await Promise.all(
-      ledger.map(async (stake: LedgerEntry) => {
-        const balance = Number(stake.balance);
-        totalStakingBalance += balance;
-        return {
-          publicKey: stake.pk,
-          stakingBalance: balance,
-          untimedAfterSlot: await calculateUntimedSlot(stake),
-          shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
-        };
-      })
-    );
-    return { stakes: stakers, totalStakingBalance: totalStakingBalance };
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
-  }
+  const stakers: Stake[] = await Promise.all(
+    ledger.map(async (stake: LedgerEntry) => {
+      const balance = Number(stake.balance);
+      totalStakingBalance += balance;
+      return {
+        publicKey: stake.pk,
+        stakingBalance: balance,
+        untimedAfterSlot: await calculateUntimedSlot(stake),
+        shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
+      };
+    })
+  );
+  return { stakes: stakers, totalStakingBalance: totalStakingBalance };
 }
 
 async function calculateUntimedSlot(ledgerEntry: LedgerEntry): Promise<number> {
