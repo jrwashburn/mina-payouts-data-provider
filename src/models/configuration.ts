@@ -30,4 +30,10 @@ export interface Configuration {
   ledgerDbCommandHost: string,
   ledgerDbCommandPort: number,
   ledgerDbCommandName: string,
+
+  checkNodes: string[], // list of mina daemon enpoints exposing graphql interface in the form of http://<ip>:<port>,http://<ip>:<port>,...
+
+  trustArchiveDatabaseHeight: boolean, // whether to trust the archive db height or not at startup 
+  archiveDbCheckInterval: number, // schedule to check archive vs. node height every X minutes 
+  archiveDbRecencyThreshold: number, // threshold for archive db recency in block height 
 }
