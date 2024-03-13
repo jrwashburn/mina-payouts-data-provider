@@ -7,7 +7,6 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    console.log('Getting consensus...');
     const messages: { [key: string]: string }[] = [];
     const blockSummary: BlockSummary = await db.getLatestBlock();
     const currentEpoch = getCurrentEpoch(blockSummary.globalslotsincegenesis);
@@ -16,10 +15,10 @@ router.get('/', async (req, res) => {
       slot: blockSummary.globalslot - (currentEpoch * configuration.slotsPerEpoch), stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,
       ledgerHash: blockSummary.ledgerhash, datetime: blockSummary.datetime, messages: messages
     };
-    console.log('Consensus:', response);
+    req.log.info(response, 'Consensus');
     res.status(200).json(response);
   } catch (err) {
-    console.error(err);
+    req.log.error(err);
     res.status(500).send('An error occurred getting consensus information');
   }
 });

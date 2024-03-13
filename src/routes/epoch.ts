@@ -3,7 +3,6 @@ import * as db from '../database/blockArchiveDb';
 import { BlockSummary } from '../models/blocks';
 import configuration from '../configurations/environmentConfiguration';
 
-
 const router = express.Router();
 
 router.get('/:epoch/', async (req, res) => {
@@ -12,7 +11,6 @@ router.get('/:epoch/', async (req, res) => {
   if (isNaN(epoch) || isNaN(fork)) {
     res.status(400).send('Invalid epoch or fork');
   }
-  console.log('Getting epoch data for epoch:', epoch, 'fork:', fork);
 
   try {
     const messages: { [key: string]: string }[] = [];
@@ -27,10 +25,10 @@ router.get('/:epoch/', async (req, res) => {
       maxBlockHeight: epochMaxBlockHeight,
       messages: messages,
     }
-    console.log('Epoch data:', response);
+    req.log.info(response, `Epoch data for epoch ${epoch} and fork ${fork}`);
     res.status(200).json(response);
   } catch (err) {
-    console.error(err);
+    req.log.error(err);
     res.status(500).send('An error has occured getting epoch data');
   }
 });

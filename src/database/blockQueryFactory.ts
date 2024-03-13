@@ -327,7 +327,7 @@ WHERE
   )
 AND b.global_slot_since_genesis >= CAST($1 AS INTEGER)
 AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)
-AND b.global_slot_since_genesis = b.global_slot_since_hard_fork`;
+AND b.global_slot_since_genesis = b.global_slot`;
 
 const getMinMaxBlocksInSlotRangeQueryFork1 = `
 SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight

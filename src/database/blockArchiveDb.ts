@@ -3,7 +3,7 @@ import { createBlockQueryPool } from './databaseFactory'
 import configuration from '../configurations/environmentConfiguration';
 import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery } from './blockQueryFactory';
 
-console.log(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
+console.debug(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
 const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
 
 export async function getLatestBlock(): Promise<BlockSummary> {
@@ -32,9 +32,9 @@ async function getNullParents(minHeight: number, maxHeight: number): Promise<num
 }
 
 export async function getBlocks(key: string, minHeight: number, maxHeight: number): Promise<Block[]> {
-  console.log('Getting blocks in blockArchiveDb.ts for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
+  console.debug('Getting blocks in blockArchiveDb.ts for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
   const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
-  console.log('missingHeights:', missingHeights);
+  console.debug('missingHeights:', missingHeights);
   if (
     (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
     (minHeight > 0 && missingHeights.length > 0)
@@ -46,7 +46,7 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
     );
   }
   const nullParents = await getNullParents(minHeight, maxHeight);
-  console.log('nullParents:', nullParents);
+  console.debug('nullParents:', nullParents);
   if (
     (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
     (minHeight > 0 && nullParents.length > 0)
@@ -57,59 +57,47 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
       )}`,
     );
   }
-  console.log('calling blockQuery');
-  try {
-    const result = await pool.query(getBlocksQuery, [key, minHeight, maxHeight]);
-    const blocks: Block[] = result.rows.map(row => ({
-      blockheight: Number(row.blockheight),
-      statehash: String(row.statehash),
-      stakingledgerhash: String(row.stakingledgerhash),
-      blockdatetime: Number(row.blockdatetime),
-      slot: Number(row.slot),
-      globalslotsincegenesis: Number(row.globalslotsincegenesis),
-      creatorpublickey: String(row.creatorpublickey),
-      winnerpublickey: String(row.winnerpublickey),
-      receiverpublickey: String(row.receiverpublickey),
-      coinbase: Number(row.coinbase),
-      feetransfertoreceiver: Number(row.feetransfertoreceiver),
-      feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
-      usercommandtransactionfees: Number(row.usercommandtransactionfees),
-    }));
-    return blocks;
-  } catch (error) {
-    console.error('Error getting blocks:', error);
-    throw new Error('Error getting blocks');
-  }
+  const result = await pool.query(getBlocksQuery, [key, minHeight, maxHeight]);
+  const blocks: Block[] = result.rows.map(row => ({
+    blockheight: Number(row.blockheight),
+    statehash: String(row.statehash),
+    stakingledgerhash: String(row.stakingledgerhash),
+    blockdatetime: Number(row.blockdatetime),
+    slot: Number(row.slot),
+    globalslotsincegenesis: Number(row.globalslotsincegenesis),
+    creatorpublickey: String(row.creatorpublickey),
+    winnerpublickey: String(row.winnerpublickey),
+    receiverpublickey: String(row.receiverpublickey),
+    coinbase: Number(row.coinbase),
+    feetransfertoreceiver: Number(row.feetransfertoreceiver),
+    feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
+    usercommandtransactionfees: Number(row.usercommandtransactionfees),
+  }));
+  return blocks;
 }
 
 export async function getEpoch(hash: string, userSpecifiedEpoch: number | null): Promise<number> {
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
+  const result = await pool.query(getEpochQuery, [hash]);
 
-  try {
-    const result = await pool.query(getEpochQuery, [hash]);
+  if (result.rows[0].min && result.rows[0].max) {
+    const minGlobalSlot = Number.parseFloat(result.rows[0].min);
+    const maxGlobalSlot = Number.parseFloat(result.rows[0].max);
+    const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
 
-    if (result.rows[0].min && result.rows[0].max) {
-      const minGlobalSlot = Number.parseFloat(result.rows[0].min);
-      const maxGlobalSlot = Number.parseFloat(result.rows[0].max);
-      const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
-
-      const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
-      const nextEpoch = Math.ceil(maxGlobalSlot / slotsInEpoch);
-      if (epoch + 1 == nextEpoch) {
-        return epoch;
-      }
-      else if (epoch === 0 && (userSpecifiedEpoch === 0 || userSpecifiedEpoch === 1)) {
-        return userSpecifiedEpoch;
-      }
-      else {
-        throw new Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs. 
-          If this is the genesis ledger, please specify the epoch in the request.
-          Epoch: ${epoch}, Next Epoch: ${nextEpoch}, User Specified Epoch: ${userSpecifiedEpoch}, minGlobalSlot: ${minGlobalSlot}, maxGlobalSlot: ${maxGlobalSlot}`);
-      }
+    const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
+    const nextEpoch = Math.ceil(maxGlobalSlot / slotsInEpoch);
+    if (epoch + 1 == nextEpoch) {
+      return epoch;
     }
-  } catch (error) {
-    console.log(`Error getting epoch ${error}`);
-    throw error;
+    else if (epoch === 0 && (userSpecifiedEpoch === 0 || userSpecifiedEpoch === 1)) {
+      return userSpecifiedEpoch;
+    }
+    else {
+      throw new Error(`Error getting epoch, minGlobalSlot and maxGlobalSlot are from different epochs. 
+        If this is the genesis ledger, please specify the epoch in the request.
+        Epoch: ${epoch}, Next Epoch: ${nextEpoch}, User Specified Epoch: ${userSpecifiedEpoch}, minGlobalSlot: ${minGlobalSlot}, maxGlobalSlot: ${maxGlobalSlot}`);
+    }
   }
   return -1;
 }

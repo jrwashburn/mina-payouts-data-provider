@@ -118,3 +118,5 @@ spec:
             secretKeyRef:
               name: ledger_db_command_certificate
               key: LEDGER_DB_COMMAND_CERTIFICATE
+        - name: CHECK_NODES
+          value: 'http://MYNODE1.com,http://SOMENODE2.com,http://SOMENODE3.com,http://SOMENODE4.com,http://SOMENODE5.com'

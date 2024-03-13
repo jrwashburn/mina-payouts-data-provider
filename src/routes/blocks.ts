@@ -5,19 +5,18 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   const { key, minHeight, maxHeight } = req.query as unknown as QueryParams;
-  console.log('Getting blocks for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
   try {
     const blocks = await db.getBlocks(key, minHeight, maxHeight);
     const response = { blocks, messages: [] };
     if (blocks.length > 0) {
-      console.log('Blocks:', response.blocks[0].blockheight, 'to', response.blocks[response.blocks.length - 1].blockheight);
+      req.log.info(`Returning blocks for key ${key} from height ${minHeight} to ${maxHeight}, returning blocks ${response.blocks[0].blockheight} to ${response.blocks[response.blocks.length - 1].blockheight}`);
     } else {
-      console.log('No blocks returned');
+      req.log.info(blocks, 'No blocks returned');
     }
     res.status(200).json(response);
   }
   catch (error) {
-    console.error(error);
+    req.log.error(error);
     res.status(500).send('An error occurred getting block information');
   }
 });
