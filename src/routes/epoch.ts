@@ -7,12 +7,13 @@ const router = express.Router();
 
 router.get('/:epoch/', async (req, res) => {
   const epoch = Number(req.params.epoch);
+  const messages: { [key: string]: string }[] = [];
+
   if (!Number.isInteger(epoch) || epoch < 0) {
     return res.status(400).send('Invalid epoch');
   }
-  const messages: { [key: string]: string }[] = [];
-  let { fork } = req.query as unknown as { fork: number };
 
+  let { fork } = req.query as unknown as { fork: number };
   if (isNaN(fork)) {
     fork = 0;
     messages.push({ warning: 'Fork was not provided, defaulted to 0' });
