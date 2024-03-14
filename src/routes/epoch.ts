@@ -6,14 +6,19 @@ import configuration from '../configurations/environmentConfiguration';
 const router = express.Router();
 
 router.get('/:epoch/', async (req, res) => {
-  const epoch: number = parseInt(req.params.epoch);
-  const { fork = 0 } = req.query as unknown as { fork: number };
-  if (isNaN(epoch) || isNaN(fork)) {
-    res.status(400).send('Invalid epoch or fork');
+  const epoch = Number(req.params.epoch);
+  if (!Number.isInteger(epoch) || epoch < 0) {
+    return res.status(400).send('Invalid epoch');
+  }
+  const messages: { [key: string]: string }[] = [];
+  let { fork } = req.query as unknown as { fork: number };
+
+  if (isNaN(fork)) {
+    fork = 0;
+    messages.push({ warning: 'Fork was not provided, defaulted to 0' });
   }
 
   try {
-    const messages: { [key: string]: string }[] = [];
     const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch);
     const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot, fork);
     const blockSummary: BlockSummary = await db.getLatestBlock();
@@ -26,10 +31,14 @@ router.get('/:epoch/', async (req, res) => {
       messages: messages,
     }
     req.log.info(response, `Epoch data for epoch ${epoch} and fork ${fork}`);
-    res.status(200).json(response);
+    if (epochMinBlockHeight === null || epochMinBlockHeight === undefined) {
+      return res.status(404).send(`No data found for epoch ${epoch} and fork ${fork}`);
+    } else {
+      return res.status(200).json(response);
+    }
   } catch (err) {
     req.log.error(err);
-    res.status(500).send('An error has occured getting epoch data');
+    return res.status(500).send('An error has occured getting epoch data');
   }
 });
 
