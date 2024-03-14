@@ -1,6 +1,6 @@
 {
   "name": "mina-payouts-data-provider",
-  "version": "1.4.1",
+  "version": "2.0.0",
   "description": "Data provider API for mina-pool-payouts",
   "main": "index.js",
   "scripts": {
