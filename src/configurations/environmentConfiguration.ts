@@ -38,6 +38,15 @@ function loadConfiguration(): Configuration {
     ledgerDbCommandHost: String(process.env.LEDGER_DB_COMMAND_HOST),
     ledgerDbCommandPort: Number(process.env.LEDGER_DB_COMMAND_PORT),
     ledgerDbCommandName: String(process.env.LEDGER_DB_COMMAND_NAME),
+
+    checkNodes: (process.env.CHECK_NODES?.split(',') || []) as string[],
+
+    //assume archive database block height is okay unless detected otherwise by the archiveDbRecencyChecker
+    trustArchiveDatabaseHeight: process.env.TRUST_ARCHIVE_DATABASE_HEIGHT?.toLowerCase() === 'false' ? false : true,
+    // schedule to check archive vs. node height every X minutes (default 2)
+    archiveDbCheckInterval: !isNaN(Number(process.env.ARCHIVE_DB_CHECK_INTERVAL)) ? Number(process.env.ARCHIVE_DB_CHECK_INTERVAL) : 2,
+    // threshold for archive db recency in block height (default 5)
+    archiveDbRecencyThreshold: !isNaN(Number(process.env.ARCHIVE_DB_RECENCY_THRESHOLD)) ? Number(process.env.ARCHIVE_DB_RECENCY_THRESHOLD) : 5,
   }
   validateEnvVars(configuration);
   return configuration;
@@ -73,6 +82,8 @@ function ensureEnvVarsPresent() {
     'LEDGER_DB_COMMAND_HOST',
     'LEDGER_DB_COMMAND_PORT',
     'LEDGER_DB_COMMAND_NAME',
+
+    'CHECK_NODES'
   ];
   envVars.forEach((variable) => {
     if (!process.env[variable]) {
@@ -106,5 +117,14 @@ function validateEnvVars(configuration: Configuration): void {
     throw Error(message);
   }
 
+  const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?(\/\S*)?$/;
+  const nodes = configuration.checkNodes.join(',');
+  nodes.split(',').forEach((node) => {
+    if (!urlPattern.test(node.trim())) {
+      const message = `CHECK_NODES environment variable must contain validly formed http[s]://fqdn:port[/path] but got "${node}"`;
+      console.log(message);
+      throw Error(message);
+    }
+  });
 }
 export default configuration;

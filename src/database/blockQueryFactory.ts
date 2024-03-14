@@ -269,7 +269,7 @@ export const getBlocksQuery =
     : getBlocksQueryv2;
 
 export const getNullParentsQuery = `
-    SELECT height FROM blocks WHERE parent_id is null AND height >= $1 AND height <= $2
+    SELECT height FROM blocks WHERE parent_id is null AND height >= $1 AND height <= $2 and height > 1
 `;
 
 const getLastestBlockQueryv1 = `
@@ -303,7 +303,8 @@ export const getLastestBlockQuery =
     getLastestBlockQueryv1
     : getLastestBlockQueryv2;
 
-export const getMinMaxBlocksInSlotRangeQuery = `
+
+const getMinMaxBlocksInSlotRangeQueryFork0 = `
 SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
 FROM
 blocks b
@@ -325,28 +326,47 @@ WHERE
     WHERE c.id = b.id
   )
 AND b.global_slot_since_genesis >= CAST($1 AS INTEGER)
-AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)`;
+AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)
+AND b.global_slot_since_genesis = b.global_slot`;
 
-const getEpochQueryv1 = `
-SELECT MIN(b.global_slot), MAX(b.global_slot) 
+const getMinMaxBlocksInSlotRangeQueryFork1 = `
+SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
+FROM
+blocks b
+WHERE
+  EXISTS (
+    WITH RECURSIVE chain AS (
+      SELECT id, b.parent_id
+      FROM blocks b
+      WHERE b.height = ( select MAX(height) from blocks )
+      UNION ALL
+      SELECT b.id, b.parent_id
+      FROM blocks b
+      INNER JOIN chain ON b.id = chain.parent_id
+    )
+    SELECT
+      1
+    FROM
+      chain c
+    WHERE c.id = b.id
+  )
+AND b.global_slot_since_hard_fork >= CAST($1 AS INTEGER)
+AND b.global_slot_since_hard_fork <= CAST($2 AS INTEGER)
+AND b.global_slot_since_hard_fork < b.global_slot_since_genesis`;
+
+export const getMinMaxBlocksInSlotRangeQuery = (fork: number): string => {
+  let query = getMinMaxBlocksInSlotRangeQueryFork0;
+  if (fork == 1) { query = getMinMaxBlocksInSlotRangeQueryFork1; }
+  return query;
+}
+
+export const getEpochQuery = `
+SELECT MIN(b.global_slot_since_hard_fork), MAX(b.global_slot_since_hard_fork)
 FROM blocks b
 INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
 INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
 WHERE slh.value = $1
 `;
-
-const getEpochQueryv2 = `
-SELECT MIN(b.global_slot_since_genesis), MAX(b.global_slot_since_genesis) 
-FROM blocks b
-INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
-INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
-WHERE slh.value = $1
-`;
-
-export const getEpochQuery =
-  configuration.blockDbVersion === 'v1' ?
-    getEpochQueryv1
-    : getEpochQueryv2;
 
 export const getHeightMissingQuery = `
 SELECT h as height

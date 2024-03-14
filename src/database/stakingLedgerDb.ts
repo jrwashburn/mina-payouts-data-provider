@@ -3,10 +3,10 @@ import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
 import * as db from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 
-console.log(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
+console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
 const sldb = createLedgerQueryPool(configuration.ledgerDbQueryConnectionSSL);
 
-console.log(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
+console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
 const commanddb = createStakingLedgerCommandPool(configuration.ledgerDbCommandConnectionSSL);
 
 export async function getStakingLedgers(hash: string, key: string) {
@@ -21,13 +21,8 @@ export async function getStakingLedgers(hash: string, key: string) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE hash = $1 AND delegate_key = $2`;
-  try {
-    const result = await sldb.query(query, [hash, key]);
-    return buildLedgerEntries(result.rows);
-  } catch (error) {
-    console.error('Error getting staking ledgers by Hash:', error);
-    throw new Error('Error getting staking ledgers by Hash');
-  }
+  const result = await sldb.query(query, [hash, key]);
+  return buildLedgerEntries(result.rows);
 }
 
 export async function getStakingLedgersByEpoch(key: string, epoch: number) {
@@ -42,50 +37,35 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
-  try {
-    const result = await sldb.query(query, [key, epoch]);
-    return buildLedgerEntries(result.rows);
-  } catch (error) {
-    console.error('Error getting staking ledgers by Epoch:', error);
-    throw new Error('Error getting staking ledgers by Epoch');
-  }
+  const result = await sldb.query(query, [key, epoch]);
+  return buildLedgerEntries(result.rows);
 }
 
 export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number | null]> {
-  console.log(`hashExists called with hash: ${hash}`)
-  try {
-    const query = 'select count(*) from staking_ledger where hash=$1';
-    const result = await sldb.query(query, [hash]);
-    let hashEpoch = -1;
-    let hashExists = result.rows[0].count > 0;
-    console.log('hashExists result:', result.rows[0], result.rows[0].count > 0)
-    if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
-      const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
-      const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
-      console.log('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
-      hashExists = result.rows[0].count > 0;
-    }
-    if (hashExists) {
-      const query = 'select max(epoch) as epoch from staking_ledger where hash=$1';
-      const result = await sldb.query(query, [hash]);
-      hashEpoch = result.rows[0].epoch
-    }
-    return [hashExists, hashEpoch];
-  } catch (error) {
-    console.error('Error checking if hash exists:', error);
-    throw new Error('Error checking if hash exists');
+  console.debug(`hashExists called with hash: ${hash}`)
+  const query = 'select count(*) from staking_ledger where hash=$1';
+  const result = await sldb.query(query, [hash]);
+  let hashEpoch = -1;
+  let hashExists = result.rows[0].count > 0;
+  console.debug('hashExists result:', result.rows[0], result.rows[0].count > 0)
+  if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
+    const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
+    const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
+    console.debug('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
+    hashExists = result.rows[0].count > 0;
   }
+  if (hashExists) {
+    const query = 'select max(epoch) as epoch from staking_ledger where hash=$1';
+    const result = await sldb.query(query, [hash]);
+    hashEpoch = result.rows[0].epoch
+  }
+  return [hashExists, hashEpoch];
 }
 
 export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
-  console.log(`insertBatch called: ${dataArray.length} records to insert.`);
+  console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
-  try {
-    epoch = await db.getEpoch(hash, userSpecifiedEpoch);
-  } catch (error) {
-    console.error('Error getting epoch:', error);
-    throw new Error('Error getting epoch');
-  }
+  epoch = await db.getEpoch(hash, userSpecifiedEpoch);
   const client = await commanddb.connect();
   try {
     await client.query('BEGIN');
@@ -138,11 +118,11 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSp
         item.permissions?.set_permissions,
         item.permissions?.set_verification_key
       ]));
-      console.log(`Inserted ${batch.length} records`);
+      console.debug(`Inserted ${batch.length} records`);
     }
     await client.query('COMMIT');
   } catch (error) {
-    console.log('Failed to insert batch, starting rollback');
+    console.error('Failed to insert batch, starting rollback');
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
     throw new Error('Failed to insert batch');
@@ -171,11 +151,6 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
 
 export async function updateEpoch(hash: string, epoch: number): Promise<void> {
   const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
-  try {
-    await commanddb.query(query, [epoch, hash]);
-  } catch (error) {
-    console.error('Error updating epoch:', error);
-    throw new Error('Error updating epoch');
-  }
+  await commanddb.query(query, [epoch, hash]);
 }
 
