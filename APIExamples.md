@@ -1,6 +1,6 @@
 ## consensus
 
-[/consensus](https://api.minastakes.com)
+[/consensus](https://api.minastakes.com/consensus)
 
 The /consensus endpoint returns the current (ish) network tip
 
