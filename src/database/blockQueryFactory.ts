@@ -283,7 +283,8 @@ ledger_hash as ledgerhash,
 to_char(to_timestamp("timestamp" / 1000) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS') || '.' || 
     LPAD((("timestamp" % 1000)::text), 3, '0') || 'Z' as datetime
 FROM blocks
-WHERE id in (SELECT MAX(id) FROM blocks)`
+WHERE height in (SELECT MAX(height) FROM blocks)
+LIMIT 1`
 
 const getLastestBlockQueryv2 = `
 SELECT 
@@ -296,7 +297,8 @@ ledger_hash as ledgerhash,
 to_char(to_timestamp(cast ("timestamp" as bigint) / 1000) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS') || '.' || 
     LPAD(((cast("timestamp" as bigint) % 1000)::text), 3, '0') || 'Z' as datetime
 FROM blocks
-WHERE id in (SELECT MAX(id) FROM blocks);`
+WHERE height in (SELECT MAX(height) FROM blocks)
+LIMIT 1;`
 
 export const getLastestBlockQuery =
   configuration.blockDbVersion === 'v1' ?

@@ -120,3 +120,5 @@ spec:
               key: LEDGER_DB_COMMAND_CERTIFICATE
         - name: CHECK_NODES
           value: 'http://MYNODE1.com,http://SOMENODE2.com,http://SOMENODE3.com,http://SOMENODE4.com,http://SOMENODE5.com'
+        - name: ARCHIVE_DB_RECENCY_THRESHOLD
+          value: "5"
