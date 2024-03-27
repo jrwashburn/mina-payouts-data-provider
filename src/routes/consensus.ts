@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     const currentEpoch = getCurrentEpoch(blockSummary.globalslotsincegenesis);
     const response = {
       epoch: currentEpoch, blockHeight: blockSummary.blockheight, globalSlotSinceGenesis: blockSummary.globalslotsincegenesis,
-      slot: blockSummary.globalslot - (currentEpoch * configuration.slotsPerEpoch), stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,
+      slot: blockSummary.globalslot - (currentEpoch * BigInt(configuration.slotsPerEpoch)), stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,
       ledgerHash: blockSummary.ledgerhash, datetime: blockSummary.datetime, messages: messages
     };
     req.log.info(response, 'Consensus');
@@ -23,8 +23,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-function getCurrentEpoch(slotNumber: number): number {
-  return Math.floor(slotNumber / configuration.slotsPerEpoch);
+function getCurrentEpoch(slotNumber: bigint): bigint {
+  return slotNumber / BigInt(configuration.slotsPerEpoch);
 }
 
 export default router;

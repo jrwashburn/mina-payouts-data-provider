@@ -1,10 +1,10 @@
 export type Block = {
-  blockheight: number;
+  blockheight: bigint;
   statehash: string;
   stakingledgerhash: string;
   blockdatetime: number;
-  slot: number;
-  globalslotsincegenesis: number;
+  slot: bigint;
+  globalslotsincegenesis: bigint;
   creatorpublickey: string;
   winnerpublickey: string;
   receiverpublickey: string;
@@ -17,16 +17,26 @@ export type Block = {
 export type Blocks = Array<Block>;
 
 export type Height = {
-  height: number;
+  height: bigint;
 };
 
 export type BlockSummary = {
-  blockheight: number;
-  globalslotsincegenesis: number;
-  globalslot: number;
+  blockheight: bigint;
+  globalslotsincegenesis: bigint;
+  globalslot: bigint;
   statehash: string;
   parenthash: string;
   ledgerhash: string;
   datetime: string;
+};
+
+export type EpochBlockRange = {
+  epochminblockheight: bigint;
+  epochmaxblockheight: bigint;
+};
+
+export type EpochSlotRange = {
+  epochminslot: bigint;
+  epochmaxslot: bigint;
 };
 

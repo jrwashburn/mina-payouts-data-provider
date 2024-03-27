@@ -363,7 +363,7 @@ export const getMinMaxBlocksInSlotRangeQuery = (fork: number): string => {
 }
 
 const getEpochQueryv1 = `
-SELECT MIN(b.global_slot_since_genesis), MAX(b.global_slot_since_genesis)
+SELECT MIN(b.global_slot_since_genesis) as epochminslot, MAX(b.global_slot_since_genesis) as epochmaxslot
 FROM blocks b
 INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
 INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
@@ -371,7 +371,7 @@ WHERE slh.value = $1
 `;
 
 const getEpochQueryv2 = `
-SELECT MIN(b.global_slot_since_hard_fork), MAX(b.global_slot_since_hard_fork)
+SELECT MIN(b.global_slot_since_hard_fork) as epochminslot, MAX(b.global_slot_since_hard_fork) as epochmaxslot
 FROM blocks b
 INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
 INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id

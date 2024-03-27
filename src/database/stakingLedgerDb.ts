@@ -57,7 +57,7 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
 
 export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
   console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
-  let epoch = -1;
+  let epoch = BigInt(-1);
   epoch = await getEpoch(hash, userSpecifiedEpoch);
   const client = await commanddb.connect();
   try {
@@ -91,7 +91,7 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSp
 				permissions_set_verification_key ) VALUES ${values.join(', ')}`;
       await client.query(query, batch.flatMap((item) => [
         hash,
-        epoch == -1 ? userSpecifiedEpoch : epoch,
+        epoch == BigInt(-1) ? userSpecifiedEpoch : BigInt(epoch),
         item.pk,
         item.balance,
         item.delegate,
@@ -142,7 +142,7 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
   return ledgerEntries;
 }
 
-export async function updateEpoch(hash: string, epoch: number): Promise<void> {
+export async function updateEpoch(hash: string, epoch: bigint): Promise<void> {
   const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
   await commanddb.query(query, [epoch, hash]);
 }

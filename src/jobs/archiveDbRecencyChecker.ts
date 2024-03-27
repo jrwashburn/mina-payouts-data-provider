@@ -32,7 +32,7 @@ async function getBlockHeightFromNode(node: string): Promise<number> {
 }
 
 // Create a function that gets the current block height from the /consensus endpoint
-async function getCurrentBlockHeight(): Promise<number> {
+async function getCurrentBlockHeight(): Promise<bigint> {
   const blockSummary: BlockSummary = await db.getLatestBlock();
   return blockSummary.blockheight;
 }
