@@ -1,10 +1,11 @@
+import { Pool } from 'pg';
 import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
 import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 import { getStakingLedgersQuery, getStakingLedgersByEpochQuery, hashExistsQuery, updateEpochQuery, hashExistsForEpochQuery, getEpochFromHashQuery, getInsertIntoStakingLedgersQuery } from './stakingLedgerQueryFactory'
 
-const sldb = createLedgerQueryPool();
-const commanddb = createStakingLedgerCommandPool();
+const sldb: Pool = createLedgerQueryPool();
+const commanddb: Pool = createStakingLedgerCommandPool();
 
 export async function getStakingLedgers(hash: string, key: string): Promise<LedgerEntry[]> {
   const result = await sldb.query(getStakingLedgersQuery, [hash, key]);
