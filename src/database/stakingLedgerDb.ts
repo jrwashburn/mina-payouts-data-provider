@@ -5,11 +5,11 @@ import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databas
 const sldb = createLedgerQueryPool();
 const commanddb = createStakingLedgerCommandPool();
 
-export async function getStakingLedgers(hash: string, key: string) {
+export async function getStakingLedgers(hash: string, key: string): Promise<LedgerEntry[]> {
   const query = `SELECT 
-		public_key, 
+		public_key,
 		balance, 
-		delegate_key, 
+		delegate_key,
 		timing_initial_minimum_balance, 
 		timing_cliff_time, 
 		timing_cliff_amount, 
@@ -18,10 +18,10 @@ export async function getStakingLedgers(hash: string, key: string) {
 		FROM public.staking_ledger
 		WHERE hash = $1 AND delegate_key = $2`;
   const result = await sldb.query(query, [hash, key]);
-  return buildLedgerEntries(result.rows);
+  return buildLedgerEntries(result.rows as TimedStakingLedgerResultRow[]);
 }
 
-export async function getStakingLedgersByEpoch(key: string, epoch: number) {
+export async function getStakingLedgersByEpoch(key: string, epoch: number): Promise<LedgerEntry[]> {
   const query = `SELECT 
 		public_key, 
 		balance, 
@@ -34,10 +34,10 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
   const result = await sldb.query(query, [key, epoch]);
-  return buildLedgerEntries(result.rows);
+  return buildLedgerEntries(result.rows as TimedStakingLedgerResultRow[]);
 }
 
-export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number | null]> {
+export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number]> {
   const query = 'select count(*) from staking_ledger where hash=$1';
   const result = await sldb.query(query, [hash]);
   let hashEpoch = -1;
