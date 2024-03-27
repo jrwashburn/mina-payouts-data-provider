@@ -1,4 +1,3 @@
-import configuration from '../configurations/environmentConfiguration';
 import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
 import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
