@@ -1,13 +1,13 @@
 import configuration from '../configurations/environmentConfiguration';
 import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
-import * as db from './blockArchiveDb';
+import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 
 console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
-const sldb = createLedgerQueryPool(configuration.ledgerDbQueryConnectionSSL);
+const sldb = createLedgerQueryPool();
 
 console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
-const commanddb = createStakingLedgerCommandPool(configuration.ledgerDbCommandConnectionSSL);
+const commanddb = createStakingLedgerCommandPool();
 
 export async function getStakingLedgers(hash: string, key: string) {
   const query = `SELECT 
@@ -65,7 +65,7 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
 export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
   console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
-  epoch = await db.getEpoch(hash, userSpecifiedEpoch);
+  epoch = await getEpoch(hash, userSpecifiedEpoch);
   const client = await commanddb.connect();
   try {
     await client.query('BEGIN');

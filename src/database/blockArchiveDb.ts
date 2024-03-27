@@ -4,7 +4,7 @@ import configuration from '../configurations/environmentConfiguration';
 import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery } from './blockQueryFactory';
 
 console.debug(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
-const pool = createBlockQueryPool(configuration.blockDbQueryConnectionSSL);
+const pool = createBlockQueryPool();
 
 export async function getLatestBlock(): Promise<BlockSummary> {
   const result = await pool.query(getLastestBlockQuery);
