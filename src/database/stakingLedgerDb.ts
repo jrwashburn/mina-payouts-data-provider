@@ -1,11 +1,10 @@
-import { Pool } from 'pg';
-import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
+import { LedgerEntry, TimedStakingLedgerResultRow, CountResult } from '../models/stakes';
 import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 import { getStakingLedgersQuery, getStakingLedgersByEpochQuery, hashExistsQuery, updateEpochQuery, hashExistsForEpochQuery, getEpochFromHashQuery, getInsertIntoStakingLedgersQuery } from './stakingLedgerQueryFactory'
 
-const sldb: Pool = createLedgerQueryPool();
-const commanddb: Pool = createStakingLedgerCommandPool();
+const sldb = createLedgerQueryPool();
+const commanddb = createStakingLedgerCommandPool();
 
 export async function getStakingLedgers(hash: string, key: string): Promise<LedgerEntry[]> {
   const result = await sldb.query(getStakingLedgersQuery, [hash, key]);
@@ -13,26 +12,26 @@ export async function getStakingLedgers(hash: string, key: string): Promise<Ledg
 }
 
 export async function getStakingLedgersByEpoch(key: string, epoch: number): Promise<LedgerEntry[]> {
-  const result = await sldb.query(getStakingLedgersByEpochQuery, [key, epoch]);
+  const result = await sldb.query(getStakingLedgersByEpochQuery, [key, epoch]) as { rows: TimedStakingLedgerResultRow[] };
   return buildLedgerEntries(result.rows.map(row => ({
-    public_key: row[0],
-    balance: row[1],
-    delegate_key: row[2],
-    timing_initial_minimum_balance: row[3],
-    timing_cliff_time: row[4],
-    timing_cliff_amount: row[5],
-    timing_vesting_period: row[6],
-    timing_vesting_increment: row[7]
-  })) as TimedStakingLedgerResultRow[]);
+    public_key: row.public_key,
+    balance: row.balance,
+    delegate_key: row.delegate_key,
+    timing_initial_minimum_balance: row.timing_initial_minimum_balance,
+    timing_cliff_time: row.timing_cliff_time,
+    timing_cliff_amount: row.timing_cliff_amount,
+    timing_vesting_period: row.timing_vesting_period,
+    timing_vesting_increment: row.timing_vesting_increment,
+  })));
 }
 
 export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number]> {
-  const result = await sldb.query(hashExistsQuery, [hash]);
+  const result = await sldb.query<CountResult>(hashExistsQuery, [hash]);
   let hashEpoch = -1;
-  let hashExists = parseInt(result.rows[0].count) > 0;
+  let hashExists = result.rows[0].count > 0;
   if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
-    const result = await sldb.query(hashExistsForEpochQuery, [hash, userSpecifiedEpoch]);
-    hashExists = parseInt(result.rows[0].count) > 0;
+    const result = await sldb.query<CountResult>(hashExistsForEpochQuery, [hash, userSpecifiedEpoch]);
+    hashExists = result.rows[0].count > 0;
   }
   if (hashExists) {
     const result = await sldb.query(getEpochFromHashQuery, [hash]);

@@ -45,3 +45,7 @@ export interface TimedStakingLedgerResultRow {
   timing_vesting_period?: number;
   timing_vesting_increment?: number;
 }
+
+export interface CountResult {
+  count: number;
+}
