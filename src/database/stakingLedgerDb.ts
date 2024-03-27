@@ -3,10 +3,7 @@ import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
 import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 
-console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
 const sldb = createLedgerQueryPool();
-
-console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
 const commanddb = createStakingLedgerCommandPool();
 
 export async function getStakingLedgers(hash: string, key: string) {
@@ -42,16 +39,13 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 }
 
 export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number | null]> {
-  console.debug(`hashExists called with hash: ${hash}`)
   const query = 'select count(*) from staking_ledger where hash=$1';
   const result = await sldb.query(query, [hash]);
   let hashEpoch = -1;
   let hashExists = result.rows[0].count > 0;
-  console.debug('hashExists result:', result.rows[0], result.rows[0].count > 0)
   if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
     const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
     const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
-    console.debug('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
     hashExists = result.rows[0].count > 0;
   }
   if (hashExists) {

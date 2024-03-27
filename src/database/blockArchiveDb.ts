@@ -1,9 +1,7 @@
 import { Block, BlockSummary, Height } from '../models/blocks';
 import { createBlockQueryPool } from './databaseFactory'
-import configuration from '../configurations/environmentConfiguration';
 import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery } from './blockQueryFactory';
 
-console.debug(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
 const pool = createBlockQueryPool();
 
 export async function getLatestBlock(): Promise<BlockSummary> {
@@ -32,9 +30,7 @@ async function getNullParents(minHeight: number, maxHeight: number): Promise<num
 }
 
 export async function getBlocks(key: string, minHeight: number, maxHeight: number): Promise<Block[]> {
-  console.debug('Getting blocks in blockArchiveDb.ts for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
   const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
-  console.debug('missingHeights:', missingHeights);
   if (
     (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
     (minHeight > 0 && missingHeights.length > 0)
