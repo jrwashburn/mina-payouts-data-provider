@@ -1,3 +1,4 @@
+// Handles /staking-ledgers endpoint
 import express from 'express';
 import multer from 'multer';
 import basicAuth from 'express-basic-auth';
@@ -55,6 +56,9 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
 
 router.get('/:ledgerHash', async (req, res) => {
   const key = req.query.key as string;
+  if (!key) {
+    return res.status(400).send('No key provided');
+  }
   const ledgerHash = req.params.ledgerHash as string;
   try {
     const controllerResponse: ControllerResponse = await getLedgerFromHashForKey(ledgerHash, key);
@@ -77,6 +81,9 @@ router.get('/:ledgerHash', async (req, res) => {
 router.get('/epoch/:epoch', async (req, res) => {
   const key = req.query.key as string;
   const epoch = parseInt(req.params.epoch);
+  if (!key) {
+    return res.status(400).send('No key provided');
+  }
   try {
     const controllerResponse: ControllerResponse = await getLedgerFromEpochForKey(key, epoch);
     const responseData: Ledger = controllerResponse.responseData as Ledger;

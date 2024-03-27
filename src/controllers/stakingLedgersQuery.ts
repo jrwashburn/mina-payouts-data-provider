@@ -1,4 +1,4 @@
-import * as sldb from '../database/stakingLedgerDb';
+import { getStakingLedgers, getStakingLedgersByEpoch } from '../database/stakingLedgerDb';
 import { Stake, LedgerEntry, Ledger } from '../models/stakes';
 import { MinaAddresses } from '../mina-addresses/minaAddressShareClass'
 import { ControllerResponse } from '../models/controller';
@@ -22,7 +22,7 @@ export async function getLedgerFromEpochForKey(key: string, epoch: number): Prom
 
 async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
   let totalStakingBalance = 0;
-  const ledger = await sldb.getStakingLedgers(ledgerHash, key);
+  const ledger = await getStakingLedgers(ledgerHash, key);
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {
@@ -44,7 +44,7 @@ async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
 
 async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
   let totalStakingBalance = 0;
-  const ledger = await sldb.getStakingLedgersByEpoch(key, epoch);
+  const ledger = await getStakingLedgersByEpoch(key, epoch);
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {

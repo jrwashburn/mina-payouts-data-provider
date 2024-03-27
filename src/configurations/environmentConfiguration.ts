@@ -14,7 +14,7 @@ function loadConfiguration(): Configuration {
     ledgerUploadApiUser: String(process.env.LEDGER_UPLOAD_API_USER),
     ledgerUploadApiPassword: String(process.env.LEDGER_UPLOAD_API_PASSWORD),
 
-    blockDbQueryConnectionSSL: Boolean(process.env.BLOCK_DB_QUERY_REQUIRE_SSL),
+    blockDbQueryConnectionSSL: process.env.BLOCK_DB_QUERY_REQUIRE_SSL === 'true',
     blockDbQueryCertificate: String(process.env.BLOCK_DB_QUERY_CERTIFICATE),
     blockDbQueryUser: String(process.env.BLOCK_DB_QUERY_USER),
     blockDbQueryPassword: String(process.env.BLOCK_DB_QUERY_PASSWORD),
@@ -23,7 +23,7 @@ function loadConfiguration(): Configuration {
     blockDbQueryName: String(process.env.BLOCK_DB_QUERY_NAME),
     blockDbVersion: String(process.env.BLOCK_DB_VERSION),
 
-    ledgerDbQueryConnectionSSL: Boolean(process.env.LEDGER_DB_QUERY_REQUIRE_SSL),
+    ledgerDbQueryConnectionSSL: process.env.LEDGER_DB_QUERY_REQUIRE_SSL === 'true',
     ledgerDbQueryCertificate: String(process.env.LEDGER_DB_QUERY_CERTIFICATE),
     ledgerDbQueryUser: String(process.env.LEDGER_DB_QUERY_USER),
     ledgerDbQueryPassword: String(process.env.LEDGER_DB_QUERY_PASSWORD),
@@ -31,7 +31,7 @@ function loadConfiguration(): Configuration {
     ledgerDbQueryPort: Number(process.env.LEDGER_DB_QUERY_PORT),
     ledgerDbQueryName: String(process.env.LEDGER_DB_QUERY_NAME),
 
-    ledgerDbCommandConnectionSSL: Boolean(process.env.LEDGER_DB_COMMAND_REQUIRE_SSL),
+    ledgerDbCommandConnectionSSL: process.env.LEDGER_DB_COMMAND_REQUIRE_SSL === 'true',
     ledgerDbCommandCertificate: String(process.env.LEDGER_DB_COMMAND_CERTIFICATE),
     ledgerDbCommandUser: String(process.env.LEDGER_DB_COMMAND_USER),
     ledgerDbCommandPassword: String(process.env.LEDGER_DB_COMMAND_PASSWORD),

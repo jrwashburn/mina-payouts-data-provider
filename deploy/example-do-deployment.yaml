@@ -62,7 +62,7 @@ spec:
           value: **HOST FOR BLOCK DB QUERY**
         - name: BLOCK_DB_QUERY_PORT
           value: **PORT FOR BLOCK DB QUERY**
-        - name: BLOCK_DB_QUERY_DB_NAME
+        - name: BLOCK_DB_QUERY_NAME
           value: **MINA ARCHIVE DATABASE NAME**
         - name: BLOCK_DB_QUERY_PASSWORD
           valueFrom:
