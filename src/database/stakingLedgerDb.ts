@@ -37,7 +37,7 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
-  const result = await sldb.query(query, [key, epoch]);
+  const result = await sldb.query(query, [key, epoch.toString()]);
   return buildLedgerEntries(result.rows);
 }
 
@@ -50,7 +50,7 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
   console.debug('hashExists result:', result.rows[0], result.rows[0].count > 0)
   if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
     const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
-    const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
+    const result = await sldb.query(query, [hash, userSpecifiedEpoch.toString()]);
     console.debug('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
     hashExists = result.rows[0].count > 0;
   }
@@ -151,6 +151,6 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
 
 export async function updateEpoch(hash: string, epoch: number): Promise<void> {
   const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
-  await commanddb.query(query, [epoch, hash]);
+  await commanddb.query(query, [epoch.toString(), hash]);
 }
 
