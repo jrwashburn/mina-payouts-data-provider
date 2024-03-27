@@ -362,13 +362,26 @@ export const getMinMaxBlocksInSlotRangeQuery = (fork: number): string => {
   return query;
 }
 
-export const getEpochQuery = `
+const getEpochQueryv1 = `
+SELECT MIN(b.global_slot_since_genesis), MAX(b.global_slot_since_genesis)
+FROM blocks b
+INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
+INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
+WHERE slh.value = $1
+`;
+
+const getEpochQueryv2 = `
 SELECT MIN(b.global_slot_since_hard_fork), MAX(b.global_slot_since_hard_fork)
 FROM blocks b
 INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
 INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
 WHERE slh.value = $1
 `;
+export const getEpochQuery =
+  configuration.blockDbVersion === 'v1' ?
+    getEpochQueryv1
+    : getEpochQueryv2;
+
 
 export const getHeightMissingQuery = `
 SELECT h as height
