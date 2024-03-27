@@ -12,7 +12,7 @@ export async function getStakingLedgers(hash: string, key: string): Promise<Ledg
 }
 
 export async function getStakingLedgersByEpoch(key: string, epoch: number): Promise<LedgerEntry[]> {
-  const result = await sldb.query(getStakingLedgersByEpochQuery, [key, epoch]) as { rows: TimedStakingLedgerResultRow[] };
+  const result = await sldb.query(getStakingLedgersByEpochQuery, [key, epoch]);
   return buildLedgerEntries(result.rows.map(row => ({
     public_key: row.public_key,
     balance: row.balance,
