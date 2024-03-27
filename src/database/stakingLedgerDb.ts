@@ -42,16 +42,16 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
   const query = 'select count(*) from staking_ledger where hash=$1';
   const result = await sldb.query(query, [hash]);
   let hashEpoch = -1;
-  let hashExists = result.rows[0].count > 0;
+  let hashExists = parseInt(result.rows[0].count) > 0;
   if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
     const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
     const result = await sldb.query(query, [hash, userSpecifiedEpoch]);
-    hashExists = result.rows[0].count > 0;
+    hashExists = parseInt(result.rows[0].count) > 0;
   }
   if (hashExists) {
     const query = 'select max(epoch) as epoch from staking_ledger where hash=$1';
     const result = await sldb.query(query, [hash]);
-    hashEpoch = result.rows[0].epoch
+    hashEpoch = parseInt(result.rows[0].epoch)
   }
   return [hashExists, hashEpoch];
 }
