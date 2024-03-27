@@ -30,4 +30,4 @@ CREATE INDEX staking_ledger_hash ON staking_ledger(hash text_ops);
 CREATE INDEX staking_ledger_public_key ON staking_ledger(public_key);
 CREATE INDEX staking_ledger_epoch ON staking_ledger(epoch);
 
-/* GRANT USAGE,SELECT ON staking_ledger TO YOUR_USER; *
+/* GRANT USAGE,SELECT,UPDATE ON staking_ledger TO YOUR_USER; */
