@@ -34,7 +34,16 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number): Prom
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
   const result = await sldb.query(query, [key, epoch]);
-  return buildLedgerEntries(result.rows as TimedStakingLedgerResultRow[]);
+  return buildLedgerEntries(result.rows.map(row => ({
+    public_key: row[0],
+    balance: row[1],
+    delegate_key: row[2],
+    timing_initial_minimum_balance: row[3],
+    timing_cliff_time: row[4],
+    timing_cliff_amount: row[5],
+    timing_vesting_period: row[6],
+    timing_vesting_increment: row[7]
+  })) as TimedStakingLedgerResultRow[]);
 }
 
 export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number]> {
