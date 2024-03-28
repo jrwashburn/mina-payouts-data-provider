@@ -57,7 +57,7 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
       )}`,
     );
   }
-  const result = await pool.query(getBlocksQuery, [key, minHeight, maxHeight]);
+  const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString()]);
   const blocks: Block[] = result.rows.map(row => ({
     blockheight: Number(row.blockheight),
     statehash: String(row.statehash),

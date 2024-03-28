@@ -1,10 +1,10 @@
 import { hashExists, updateEpoch, insertBatch } from '../database/stakingLedgerDb';
 import { getEpoch } from '../database/blockArchiveDb';
 import { ControllerResponse } from '../models/controller';
-import { LedgerEntry } from '../models/stakes';
+import { StakingLedgerSourceRow } from '../models/stakes';
 import { Logger } from 'pino';
 
-export async function uploadStakingLedger(log: Logger, ledgerJson: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null) {
+export async function uploadStakingLedger(log: Logger, ledgerJson: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null) {
   log.info('uploadStakingLedger called for hash:', hash);
   const [isAlreadyImported, hashEpoch] = await hashExists(hash, userSpecifiedEpoch);
   if (isAlreadyImported) {
