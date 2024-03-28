@@ -45,3 +45,29 @@ export interface TimedStakingLedgerResultRow {
   timing_vesting_period?: number;
   timing_vesting_increment?: number;
 }
+
+export interface StakingLedgerSourceRow {
+  pk: string;
+  balance: string;
+  delegate: string;
+  timing?: {
+    initial_minimum_balance: string;
+    cliff_time: string;
+    cliff_amount: string;
+    vesting_period: string;
+    vesting_increment: string;
+  };
+  token: string;
+  token_permissions: unknown;
+  nonce: string;
+  receipt_chain_hash: string;
+  voting_for: string;
+  permissions: {
+    stake: string;
+    edit_state: string;
+    send: string;
+    set_delegate: string;
+    set_permissions: string;
+    set_verification_key: string;
+  };
+}

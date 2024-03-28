@@ -1,5 +1,5 @@
 import configuration from '../configurations/environmentConfiguration';
-import { LedgerEntry, TimedStakingLedgerResultRow } from '../models/stakes';
+import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes';
 import { getEpoch } from './blockArchiveDb';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
 
@@ -62,20 +62,13 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
   return [hashExists, hashEpoch];
 }
 
-export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
+export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
   console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
   epoch = await getEpoch(hash, userSpecifiedEpoch);
   const client = await commanddb.connect();
   try {
-    await client.query('BEGIN');
-    const batchSize = 1000;
-    console.log('Number of records:', dataArray.length);
-    for (let i = 0; i < dataArray.length; i += batchSize) {
-      const batch = dataArray.slice(i, i + batchSize);
-      const values = batch.map((item, index) => `(DEFAULT, $${index * 20 + 1}, $${index * 20 + 2}, $${index * 20 + 3}, $${index * 20 + 4}, $${index * 20 + 5}, $${index * 20 + 6}, $${index * 20 + 7}, $${index * 20 + 8}, $${index * 20 + 9}, $${index * 20 + 10}, $${index * 20 + 11}, $${index * 20 + 12}, $${index * 20 + 13}, $${index * 20 + 14}, $${index * 20 + 15}, $${index * 20 + 16}, $${index * 20 + 17}, $${index * 20 + 18}, $${index * 20 + 19}, $${index * 20 + 20}) `);
-      const query = `INSERT INTO staking_ledger(
-				id,
+    const query = `INSERT INTO staking_ledger(
 				hash,
 				epoch,
 				public_key,
@@ -95,29 +88,36 @@ export async function insertBatch(dataArray: LedgerEntry[], hash: string, userSp
 				permissions_send,
 				permissions_set_delegate,
 				permissions_set_permissions,
-				permissions_set_verification_key ) VALUES ${values.join(', ')}`;
-      await client.query(query, batch.flatMap((item) => [
-        hash,
-        epoch == -1 ? userSpecifiedEpoch : epoch,
-        item.pk,
-        item.balance?.toString(),
-        item.delegate,
-        item.token?.toString(),
-        item.nonce?.toString(),
-        item.receipt_chain_hash,
-        item.voting_for,
-        item.timing?.initial_minimum_balance?.toString(),
-        item.timing?.cliff_time?.toString(),
-        item.timing?.cliff_amount?.toString(),
-        item.timing?.vesting_period?.toString(),
-        item.timing?.vesting_increment?.toString(),
-        item.permissions?.stake?.toString(),
-        item.permissions?.edit_stake?.toString(),
-        item.permissions?.send?.toString(),
-        item.permissions?.set_delegate?.toString(),
-        item.permissions?.set_permissions?.toString(),
-        item.permissions?.set_verification_key?.toString()
-      ]));
+				permissions_set_verification_key ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`;
+    await client.query('BEGIN');
+    const batchSize = 1000;
+    console.log('Number of records:', dataArray.length);
+    for (let i = 0; i < dataArray.length; i += batchSize) {
+      const batch = dataArray.slice(i, i + batchSize);
+      for (const item of batch) {
+        const params: StakingLedgerSourceRow = item;
+        await client.query(query, [
+          hash,
+          epoch.toString(),
+          params.pk,
+          params.balance,
+          params.delegate,
+          params.token,
+          params.nonce,
+          params.receipt_chain_hash,
+          params.voting_for,
+          params.timing?.initial_minimum_balance ?? '',
+          params.timing?.cliff_time ?? '',
+          params.timing?.cliff_amount ?? '',
+          params.timing?.vesting_period ?? '',
+          params.timing?.vesting_increment ?? '',
+          params.permissions.stake,
+          params.permissions.edit_state,
+          params.permissions.send,
+          params.permissions.set_delegate,
+          params.permissions.set_permissions,
+          params.permissions.set_verification_key]);
+      }
       console.debug(`Inserted ${batch.length} records`);
     }
     await client.query('COMMIT');
