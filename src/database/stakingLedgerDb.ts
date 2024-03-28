@@ -68,7 +68,14 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
   epoch = await getEpoch(hash, userSpecifiedEpoch);
   const client = await commanddb.connect();
   try {
-    const query = `INSERT INTO staking_ledger(
+    await client.query('BEGIN');
+    const batchSize = 1000;
+    console.log('Number of records:', dataArray.length);
+    for (let i = 0; i < dataArray.length; i += batchSize) {
+      const batch = dataArray.slice(i, i + batchSize);
+      for (const item of batch) {
+        const params: StakingLedgerSourceRow = item;
+        const query = `INSERT INTO staking_ledger(
 				hash,
 				epoch,
 				public_key,
@@ -88,41 +95,34 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
 				permissions_send,
 				permissions_set_delegate,
 				permissions_set_permissions,
-				permissions_set_verification_key ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`;
-    await client.query('BEGIN');
-    const batchSize = 1000;
-    console.log('Number of records:', dataArray.length);
-    for (let i = 0; i < dataArray.length; i += batchSize) {
-      const batch = dataArray.slice(i, i + batchSize);
-      for (const item of batch) {
-        const params: StakingLedgerSourceRow = item;
-        await client.query(query, [
-          hash,
-          epoch.toString(),
-          params.pk,
-          params.balance,
-          params.delegate,
-          params.token,
-          params.nonce,
-          params.receipt_chain_hash,
-          params.voting_for,
-          params.timing?.initial_minimum_balance ?? '',
-          params.timing?.cliff_time ?? '',
-          params.timing?.cliff_amount ?? '',
-          params.timing?.vesting_period ?? '',
-          params.timing?.vesting_increment ?? '',
-          params.permissions.stake,
-          params.permissions.edit_state,
-          params.permissions.send,
-          params.permissions.set_delegate,
-          params.permissions.set_permissions,
-          params.permissions.set_verification_key]);
+				permissions_set_verification_key )
+        VALUES (
+          '${hash}',
+          ${epoch},
+          '${params.pk}',
+          ${params.balance},
+          '${params.delegate}',
+          ${params.token},
+          ${params.nonce ?? 0},
+          '${params.receipt_chain_hash}',
+          '${params.voting_for}',
+          ${params.timing?.initial_minimum_balance ?? null},
+          ${params.timing?.cliff_time ?? null},
+          ${params.timing?.cliff_amount ?? null},
+          ${params.timing?.vesting_period ?? null},
+          ${params.timing?.vesting_increment ?? null},
+          ${params.permissions.stake},
+          '${params.permissions.edit_state}',
+          '${params.permissions.send}',
+          '${params.permissions.set_delegate}',
+          '${params.permissions.set_permissions}',
+          '${params.permissions.set_verification_key}')`;
+        await client.query(query);
       }
-      console.debug(`Inserted ${batch.length} records`);
     }
     await client.query('COMMIT');
   } catch (error) {
-    console.error('Failed to insert batch, starting rollback');
+    console.error('Failed to insert batch, starting rollback', error);
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
     throw new Error('Failed to insert batch');
