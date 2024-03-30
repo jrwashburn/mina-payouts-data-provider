@@ -19,6 +19,10 @@ router.get('/:epoch/', async (req, res) => {
     messages.push({ warning: 'Fork was not provided, defaulted to 0' });
   }
 
+  if (fork > 0 && configuration.blockDbVersion == 'v1') {
+    return res.status(400).send('Invalid fork for this archive database version');
+  }
+
   try {
     const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch);
     const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot, fork);
