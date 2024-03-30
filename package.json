@@ -1,11 +1,11 @@
 {
   "name": "mina-payouts-data-provider",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Data provider API for mina-pool-payouts",
   "main": "index.js",
   "scripts": {
     "build": "tsc --outDir dist",
-    "dev": "nodemon --exec ts-node src/index.ts",
+    "dev": "nodemon --exec ts-node src/index.ts | pino-pretty",
     "dev-sl": "nodemon --exec ts-node src/stakingLedgers/api.ts",
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -40,6 +40,7 @@
     "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^8.56.0",
     "nodemon": "^3.0.3",
+    "pino-pretty": "^11.0.0",
     "ts-node": "^10.9.2"
   }
 }
