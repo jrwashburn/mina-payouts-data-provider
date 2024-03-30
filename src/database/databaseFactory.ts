@@ -8,6 +8,8 @@ function createConfig(user: string, host: string, database: string, password: st
     database,
     password,
     port,
+    connectionTimeoutMillis: 2000,
+    idleTimeoutMillis: 10000,
     ssl: {
       ca: certificate,
       rejectUnauthorized: false,
@@ -31,7 +33,11 @@ export function createBlockQueryPool() {
     configuration.blockDbQueryCertificate,
     configuration.blockDbQueryConnectionSSL,
   );
-  return new Pool(config);
+  const pool = new Pool(config);
+  pool.on('error', (err) => {
+    console.error(`Unexpected error on idle pg pool client for Block Query Pool ${err}`);
+  });
+  return pool;
 }
 
 export function createLedgerQueryPool() {
@@ -44,7 +50,11 @@ export function createLedgerQueryPool() {
     configuration.ledgerDbQueryCertificate,
     configuration.ledgerDbQueryConnectionSSL,
   );
-  return new Pool(config);
+  const pool = new Pool(config);
+  pool.on('error', (err) => {
+    console.error(`Unexpected error on idle pg pool client for Ledger Query Pool ${err}`);
+  });
+  return pool;
 }
 
 export function createStakingLedgerCommandPool() {
@@ -57,5 +67,9 @@ export function createStakingLedgerCommandPool() {
     configuration.ledgerDbCommandCertificate,
     configuration.ledgerDbCommandConnectionSSL,
   );
-  return new Pool(config);
+  const pool = new Pool(config);
+  pool.on('error', (err) => {
+    console.error(`Unexpected error on idle pg pool client for Ledger Command Pool ${err}`);
+  });
+  return pool;
 }
