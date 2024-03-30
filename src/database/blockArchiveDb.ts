@@ -19,13 +19,13 @@ export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork:
   return [epochminblockheight, epochmaxblockheight];
 }
 
-async function getHeightMissing(minHeight: number, maxHeight: number): Promise<number[]> {
+export async function getHeightMissing(minHeight: number, maxHeight: number): Promise<number[]> {
   const result = await pool.query(getHeightMissingQuery, [minHeight, maxHeight]);
   const heights: Height[] = result.rows;
   return heights.map((x) => x.height);
 }
 
-async function getNullParents(minHeight: number, maxHeight: number): Promise<number[]> {
+export async function getNullParents(minHeight: number, maxHeight: number): Promise<number[]> {
   const result = await pool.query(getNullParentsQuery, [minHeight, maxHeight]);
   const heights: Height[] = result.rows;
   return heights.map((x) => x.height);

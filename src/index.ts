@@ -43,7 +43,7 @@ app.use(helmet());
 app.use(limiter);
 app.use(expressLogger);
 
-app.use('/consensus', cors(), consensusRouter);
+app.use('/consensus', cors(), checkTrustArchiveDatabaseHeight, consensusRouter);
 app.use('/epoch', cors(), checkTrustArchiveDatabaseHeight, epochRouter);
 app.use('/blocks', cors(), checkTrustArchiveDatabaseHeight, blocksRouter);
 app.use('/staking-ledgers', cors(), stakingLedgerRouter);
