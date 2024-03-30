@@ -306,7 +306,7 @@ export const getLastestBlockQuery =
     : getLastestBlockQueryv2;
 
 
-const getMinMaxBlocksInSlotRangeQueryFork0 = `
+const getMinMaxBlocksInSlotRangeQueryFork0v1 = `
 SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
 FROM
 blocks b
@@ -327,9 +327,34 @@ WHERE
       chain c
     WHERE c.id = b.id
   )
-AND b.global_slot_since_genesis >= CAST($1 AS INTEGER)
-AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)
-AND b.global_slot_since_genesis = b.global_slot`;
+AND b.global_slot >= CAST($1 AS INTEGER)
+AND b.global_slot <= CAST($2 AS INTEGER)
+AND b.global_slot = b.global_slot_since_genesis`;
+
+const getMinMaxBlocksInSlotRangeQueryFork0v2 = `
+SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
+FROM
+blocks b
+WHERE
+  EXISTS (
+    WITH RECURSIVE chain AS (
+      SELECT id, b.parent_id
+      FROM blocks b
+      WHERE b.height = ( select MAX(height) from blocks )
+      UNION ALL
+      SELECT b.id, b.parent_id
+      FROM blocks b
+      INNER JOIN chain ON b.id = chain.parent_id
+    )
+    SELECT
+      1
+    FROM
+      chain c
+    WHERE c.id = b.id
+  )
+AND b.global_slot_since_hard_fork >= CAST($1 AS INTEGER)
+AND b.global_slot_since_hard_fork <= CAST($2 AS INTEGER)
+AND b.global_slot_since_hard_fork = b.global_slot_since_genesis`;
 
 const getMinMaxBlocksInSlotRangeQueryFork1 = `
 SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
@@ -357,13 +382,14 @@ AND b.global_slot_since_hard_fork <= CAST($2 AS INTEGER)
 AND b.global_slot_since_hard_fork < b.global_slot_since_genesis`;
 
 export const getMinMaxBlocksInSlotRangeQuery = (fork: number): string => {
-  let query = getMinMaxBlocksInSlotRangeQueryFork0;
+  let query = getMinMaxBlocksInSlotRangeQueryFork0v1;
+  if (configuration.blockDbVersion === 'v2' && fork == 0) { query = getMinMaxBlocksInSlotRangeQueryFork0v2; }
   if (fork == 1) { query = getMinMaxBlocksInSlotRangeQueryFork1; }
   return query;
 }
 
 const getEpochQueryv1 = `
-SELECT MIN(b.global_slot_since_genesis), MAX(b.global_slot_since_genesis)
+SELECT MIN(b.global_slot), MAX(b.global_slot)
 FROM blocks b
 INNER JOIN epoch_data ed ON b.staking_epoch_data_id = ed.id
 INNER JOIN snarked_ledger_hashes slh ON ed.ledger_hash_id = slh.id
