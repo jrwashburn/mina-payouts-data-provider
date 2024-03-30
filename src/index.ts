@@ -21,7 +21,15 @@ const limiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 });
-export const logger = pino();
+export const logger = pino({
+  level: process.env.PINO_LOG_LEVEL || 'info',
+  formatters: {
+    level: (label) => {
+      return { level: label.toUpperCase() };
+    },
+  },
+  timestamp: pino.stdTimeFunctions.isoTime,
+});
 const expressLogger = pinoHttp({
   logger, redact: {
     paths: ['req.headers', 'req.body', 'res.headers'],
