@@ -14,6 +14,7 @@ import consensusRouter from './routes/consensus';
 import epochRouter from './routes/epoch';
 import blocksRouter from './routes/blocks';
 import stakingLedgerRouter from './routes/stakingLedgers';
+import healthRouter from './routes/health';
 
 const limiter = rateLimit({
   windowMs: 2 * 60 * 1000, // 2 minutes
@@ -43,6 +44,7 @@ app.use(helmet());
 app.use(limiter);
 app.use(expressLogger);
 
+app.use('/health', cors(), healthRouter);
 app.use('/consensus', cors(), checkTrustArchiveDatabaseHeight, consensusRouter);
 app.use('/epoch', cors(), checkTrustArchiveDatabaseHeight, epochRouter);
 app.use('/blocks', cors(), checkTrustArchiveDatabaseHeight, blocksRouter);
