@@ -127,6 +127,7 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
     console.error(`Error inserting batch: ${error}`);
     throw new Error('Failed to insert batch');
   }
+  client.release();
 }
 
 function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEntry[] {
