@@ -82,41 +82,27 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
 				balance,
 				delegate_key, 
 				token,
-				nonce,
 				receipt_chain_hash,
 				voting_for,
 				timing_initial_minimum_balance,
 				timing_cliff_time,
 				timing_cliff_amount,
 				timing_vesting_period,
-				timing_vesting_increment,
-				permissions_stake,
-				permissions_edit_state,
-				permissions_send,
-				permissions_set_delegate,
-				permissions_set_permissions,
-				permissions_set_verification_key )
+				timing_vesting_increment)
         VALUES (
           '${hash}',
           ${epoch},
           '${params.pk}',
           ${params.balance},
           '${params.delegate}',
-          ${params.token},
-          ${params.nonce ?? 0},
+          '${params.token}',
           '${params.receipt_chain_hash}',
           '${params.voting_for}',
           ${params.timing?.initial_minimum_balance ?? null},
           ${params.timing?.cliff_time ?? null},
           ${params.timing?.cliff_amount ?? null},
           ${params.timing?.vesting_period ?? null},
-          ${params.timing?.vesting_increment ?? null},
-          ${params.permissions.stake},
-          '${params.permissions.edit_state}',
-          '${params.permissions.send}',
-          '${params.permissions.set_delegate}',
-          '${params.permissions.set_permissions}',
-          '${params.permissions.set_verification_key}')`;
+          ${params.timing?.vesting_increment ?? null})`;
         await client.query(query);
       }
     }
@@ -126,8 +112,9 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
     throw new Error('Failed to insert batch');
+  } finally {
+    client.release();
   }
-  client.release();
 }
 
 function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEntry[] {
