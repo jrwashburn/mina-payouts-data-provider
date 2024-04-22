@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+ARG NODE_VERSION=21.7.2
+
+FROM --platform=linux/amd64 node:${NODE_VERSION}-alpine
+RUN apk update && apk upgrade --no-cache openssl
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Run the application.
+CMD ["node", "./dist/index.js"]
+
+# Expose the port that the application listens on.
+EXPOSE 9090

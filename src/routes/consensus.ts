@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const messages: { [key: string]: string }[] = [];
     const blockSummary: BlockSummary = await db.getLatestBlock();
-    const currentEpoch = getCurrentEpoch(blockSummary.globalslotsincegenesis);
+    const currentEpoch = getCurrentEpoch(blockSummary.globalslot);
     const response = {
       epoch: currentEpoch, blockHeight: blockSummary.blockheight, globalSlotSinceGenesis: blockSummary.globalslotsincegenesis,
       slot: blockSummary.globalslot - (currentEpoch * configuration.slotsPerEpoch), stateHash: blockSummary.statehash, parentHash: blockSummary.parenthash,

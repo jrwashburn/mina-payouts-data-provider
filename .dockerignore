@@ -27,13 +27,7 @@
 **/dist
 **/init-scripts
 **/deploy/*
-LICENSE
-README.md
 sample.env
 .DS_Store
-.env
 **/.env*
-ledgerfiles
-db
-ca-certificate.crt
-k8s/*
+**/*.crt
