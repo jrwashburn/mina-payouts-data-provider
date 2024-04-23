@@ -24,4 +24,33 @@ staking_ledger RENAME TO staking_ledger_backup;
 ALTER TABLE
 staking_ledger_fork1 RENAME TO staking_ledger;
 
-/* GRANT ALL ON TABLE staking_ledger to YOUR USER; */
+ALTER SEQUENCE staking_ledger_id_seq OWNED BY staking_ledger.id;
+
+ALTER TABLE
+  staking_ledger
+ADD
+  PRIMARY KEY (id);
+
+CREATE SEQUENCE staking_ledger_id_new_seq START WITH 1;
+
+SELECT
+  setval(
+    'staking_ledger_id_new_seq',
+    (
+      SELECT
+        MAX(id)
+      from
+        staking_ledger
+    )
+  );
+
+ALTER TABLE
+  staking_ledger
+ALTER COLUMN
+  ID
+SET
+  DEFAULT NEXTVAL('staking_ledger_id_new_seq');
+
+GRANT USAGE on staking_ledger_id_new_seq to YOUR_USER;
+
+GRANT ALL ON staking_ledger TO YOUR_USER;
