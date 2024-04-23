@@ -138,7 +138,7 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
 }
 
 export async function updateEpoch(hash: string, epoch: number): Promise<void> {
-  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch == -1`;
+  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch = -1`;
   await commanddb.query(query, [epoch.toString(), hash]);
 }
 
