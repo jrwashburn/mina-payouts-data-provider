@@ -23,7 +23,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 export const logger = pino({
-  level: process.env.PINO_LOG_LEVEL || 'info',
+  level: configuration.logLevel || 'info',
   formatters: {
     level: (label) => {
       return { level: label.toUpperCase() };

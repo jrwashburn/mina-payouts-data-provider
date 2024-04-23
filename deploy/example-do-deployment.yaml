@@ -122,3 +122,5 @@ spec:
           value: 'http://MYNODE1.com,http://SOMENODE2.com,http://SOMENODE3.com,http://SOMENODE4.com,http://SOMENODE5.com'
         - name: ARCHIVE_DB_RECENCY_THRESHOLD
           value: "5"
+        - name: LOG_LEVEL
+          value: "warn"

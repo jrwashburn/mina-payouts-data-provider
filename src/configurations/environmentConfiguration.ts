@@ -41,6 +41,8 @@ function loadConfiguration(): Configuration {
 
     checkNodes: (process.env.CHECK_NODES?.split(',') || []) as string[],
 
+    logLevel: String(process.env.LOG_LEVEL) || 'info',
+
     //assume archive database block height is okay unless detected otherwise by the archiveDbRecencyChecker
     trustArchiveDatabaseHeight: process.env.TRUST_ARCHIVE_DATABASE_HEIGHT?.toLowerCase() === 'false' ? false : true,
     // schedule to check archive vs. node height every X minutes (default 2)
@@ -83,7 +85,9 @@ function ensureEnvVarsPresent() {
     'LEDGER_DB_COMMAND_PORT',
     'LEDGER_DB_COMMAND_NAME',
 
-    'CHECK_NODES'
+    'CHECK_NODES',
+
+    'LOG_LEVEL',
   ];
   envVars.forEach((variable) => {
     if (!process.env[variable]) {

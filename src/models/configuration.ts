@@ -33,6 +33,8 @@ export interface Configuration {
 
   checkNodes: string[], // list of mina daemon enpoints exposing graphql interface in the form of http://<ip>:<port>,http://<ip>:<port>,...
 
+  logLevel: string, // log level for the application
+
   trustArchiveDatabaseHeight: boolean, // whether to trust the archive db height or not at startup 
   archiveDbCheckInterval: number, // schedule to check archive vs. node height every X minutes 
   archiveDbRecencyThreshold: number, // threshold for archive db recency in block height 
