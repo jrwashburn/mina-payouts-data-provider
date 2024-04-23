@@ -7,10 +7,18 @@ import { getLedgerFromHashForKey, getLedgerFromEpochForKey } from '../controller
 import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
 import { ControllerResponse } from '../models/controller';
 import { Ledger, StakingLedgerSourceRow } from '../models/stakes';
+import fs from 'fs';
 
 const router = express.Router();
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, '/tmp') // Use /tmp directory
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.fieldname + '-' + Date.now())
+    }
+  }),
   limits: {
     fileSize: 150 * 1024 * 1024, // limit file size to 150MB
   },
@@ -27,14 +35,14 @@ const auth = basicAuth({
 
 router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) => {
   try {
-    if (!req.file || !req.file.buffer) {
+    if (!req.file || !req.file.path) {
       return res.status(400).send('No file uploaded');
     }
     const hash: string = req.params.ledgerHash;
     const userSpecifiedEpoch: number | null = req.query.epoch as unknown as number | null;
     req.log.info(`uploading ${req.file.originalname} with hash ${req.params.hash} and epoch ${userSpecifiedEpoch}`);
     try {
-      const ledgerJson: StakingLedgerSourceRow[] = JSON.parse(req.file.buffer.toString('utf8'));
+      const ledgerJson: StakingLedgerSourceRow[] = JSON.parse(fs.readFileSync(req.file.path, 'utf8'));
       const controllerResponse: ControllerResponse = await uploadStakingLedger(req.log, ledgerJson, hash, userSpecifiedEpoch);
       const response = {
         messages: controllerResponse.responseMessages
@@ -42,6 +50,7 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
       const status = controllerResponse.responseCode || 200;
       req.log.info(response.messages);
       res.status(status).json(response);
+      fs.unlinkSync(req.file.path); 
     }
     catch (error) {
       req.log.error(error);
