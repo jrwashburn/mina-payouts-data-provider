@@ -59,6 +59,7 @@ export interface StakingLedgerSourceRow {
     vesting_increment: string;
   };
   token: string;
+  nonce: string;
   receipt_chain_hash: string;
   voting_for: string;
 }
