@@ -73,52 +73,38 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
     console.log('Number of records:', dataArray.length);
     for (let i = 0; i < dataArray.length; i += batchSize) {
       const batch = dataArray.slice(i, i + batchSize);
-      for (const item of batch) {
-        const params: StakingLedgerSourceRow = item;
-        const query = `INSERT INTO staking_ledger(
-				hash,
-				epoch,
-				public_key,
-				balance,
-				delegate_key, 
-				token,
-				nonce,
-				receipt_chain_hash,
-				voting_for,
-				timing_initial_minimum_balance,
-				timing_cliff_time,
-				timing_cliff_amount,
-				timing_vesting_period,
-				timing_vesting_increment,
-				permissions_stake,
-				permissions_edit_state,
-				permissions_send,
-				permissions_set_delegate,
-				permissions_set_permissions,
-				permissions_set_verification_key )
-        VALUES (
-          '${hash}',
-          ${epoch},
-          '${params.pk}',
-          ${params.balance},
-          '${params.delegate}',
-          ${params.token},
-          ${params.nonce ?? 0},
-          '${params.receipt_chain_hash}',
-          '${params.voting_for}',
-          ${params.timing?.initial_minimum_balance ?? null},
-          ${params.timing?.cliff_time ?? null},
-          ${params.timing?.cliff_amount ?? null},
-          ${params.timing?.vesting_period ?? null},
-          ${params.timing?.vesting_increment ?? null},
-          ${params.permissions.stake},
-          '${params.permissions.edit_state}',
-          '${params.permissions.send}',
-          '${params.permissions.set_delegate}',
-          '${params.permissions.set_permissions}',
-          '${params.permissions.set_verification_key}')`;
-        await client.query(query);
-      }
+      console.debug(`Processing batch ${i} to ${i + batchSize}`);
+      const values = batch.map(item => `(
+        '${hash}',
+        ${epoch},
+        '${item.pk}',
+        ${item.balance},
+        '${item.delegate}',
+        '${item.token}',
+        '${item.receipt_chain_hash}',
+        '${item.voting_for}',
+        ${item.timing?.initial_minimum_balance ?? null},
+        ${item.timing?.cliff_time ?? null},
+        ${item.timing?.cliff_amount ?? null},
+        ${item.timing?.vesting_period ?? null},
+        ${item.timing?.vesting_increment ?? null}
+      )`).join(',');
+      const query = `INSERT INTO staking_ledger(
+        hash,
+        epoch,
+        public_key,
+        balance,
+        delegate_key, 
+        token,
+        receipt_chain_hash,
+        voting_for,
+        timing_initial_minimum_balance,
+        timing_cliff_time,
+        timing_cliff_amount,
+        timing_vesting_period,
+        timing_vesting_increment)
+      VALUES ${values}`;
+      await client.query(query);
     }
     await client.query('COMMIT');
   } catch (error) {
@@ -126,8 +112,9 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
     throw new Error('Failed to insert batch');
+  } finally {
+    client.release();
   }
-  client.release();
 }
 
 function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEntry[] {
@@ -151,7 +138,7 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
 }
 
 export async function updateEpoch(hash: string, epoch: number): Promise<void> {
-  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch is null`;
+  const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch == -1`;
   await commanddb.query(query, [epoch.toString(), hash]);
 }
 

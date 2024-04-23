@@ -46,6 +46,7 @@ export interface TimedStakingLedgerResultRow {
   timing_vesting_increment?: number;
 }
 
+/* Limited staking ledger raw layout to fields that we may care about to simplify differences around hard fork */
 export interface StakingLedgerSourceRow {
   pk: string;
   balance: string;
@@ -58,16 +59,7 @@ export interface StakingLedgerSourceRow {
     vesting_increment: string;
   };
   token: string;
-  token_permissions: unknown;
   nonce: string;
   receipt_chain_hash: string;
   voting_for: string;
-  permissions: {
-    stake: string;
-    edit_state: string;
-    send: string;
-    set_delegate: string;
-    set_permissions: string;
-    set_verification_key: string;
-  };
 }

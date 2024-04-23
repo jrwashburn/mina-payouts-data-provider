@@ -8,7 +8,7 @@ export async function uploadStakingLedger(log: Logger, ledgerJson: StakingLedger
   log.info('uploadStakingLedger called for hash:', hash);
   const [isAlreadyImported, hashEpoch] = await hashExists(hash, userSpecifiedEpoch);
   if (isAlreadyImported) {
-    if (hashEpoch === null) {
+    if (hashEpoch == null || hashEpoch < 0) {
       const epochToUpdate = await getEpoch(hash, userSpecifiedEpoch);
       if (epochToUpdate > 0) {
         await updateEpoch(hash, epochToUpdate);
