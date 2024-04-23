@@ -50,11 +50,12 @@ router.post('/:ledgerHash', auth, upload.single('jsonFile'), async (req, res) =>
       const status = controllerResponse.responseCode || 200;
       req.log.info(response.messages);
       res.status(status).json(response);
-      fs.unlinkSync(req.file.path); 
     }
     catch (error) {
       req.log.error(error);
       res.status(500).send('An error occurred uploading staking ledger');
+    } finally {
+      fs.unlinkSync(req.file.path);
     }
   }
   catch (error) {
