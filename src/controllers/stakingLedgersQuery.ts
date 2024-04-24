@@ -2,6 +2,7 @@ import { getStakingLedgers, getStakingLedgersByEpoch } from '../database/staking
 import { Stake, LedgerEntry, Ledger } from '../models/stakes';
 import { MinaAddresses } from '../mina-addresses/minaAddressShareClass'
 import { ControllerResponse } from '../models/controller';
+import { Decimal } from 'decimal.js';
 
 let minaAddresses: MinaAddresses;
 (async () => {
@@ -21,13 +22,13 @@ export async function getLedgerFromEpochForKey(key: string, epoch: number): Prom
 }
 
 async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
-  let totalStakingBalance = 0;
+  let totalStakingBalance = new Decimal(0.0);
   const ledger = await getStakingLedgers(ledgerHash, key);
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {
       const balance = Number(stake.balance);
-      totalStakingBalance += balance;
+      totalStakingBalance = totalStakingBalance.plus(balance);
       return {
         publicKey: stake.pk,
         stakingBalance: balance,
@@ -38,18 +39,18 @@ async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
   );
 
   return {
-    stakes: stakers, totalStakingBalance: totalStakingBalance
+    stakes: stakers, totalStakingBalance: totalStakingBalance.toNumber()
   };
 }
 
 async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
-  let totalStakingBalance = 0;
+  let totalStakingBalance = new Decimal(0.0);
   const ledger = await getStakingLedgersByEpoch(key, epoch);
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {
       const balance = Number(stake.balance);
-      totalStakingBalance += balance;
+      totalStakingBalance = totalStakingBalance.plus(balance);
       return {
         publicKey: stake.pk,
         stakingBalance: balance,
@@ -58,7 +59,7 @@ async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
       };
     })
   );
-  return { stakes: stakers, totalStakingBalance: totalStakingBalance };
+  return { stakes: stakers, totalStakingBalance: totalStakingBalance.toNumber() };
 }
 
 async function calculateUntimedSlot(ledgerEntry: LedgerEntry): Promise<number> {
