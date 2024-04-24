@@ -20,7 +20,8 @@ export async function getStakingLedgers(hash: string, key: string) {
 		timing_vesting_period, 
 		timing_vesting_increment 
 		FROM public.staking_ledger
-		WHERE hash = $1 AND delegate_key = $2`;
+		WHERE hash = $1 AND delegate_key = $2
+    ORDER BY public_key ASC`;
   const result = await sldb.query(query, [hash, key]);
   return buildLedgerEntries(result.rows);
 }
@@ -36,7 +37,8 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_period, 
 		timing_vesting_increment 
 		FROM public.staking_ledger
-		WHERE delegate_key = $1 AND epoch = $2`;
+		WHERE delegate_key = $1 AND epoch = $2
+    ORDER BY public_key ASC`;
   const result = await sldb.query(query, [key, epoch.toString()]);
   return buildLedgerEntries(result.rows);
 }
