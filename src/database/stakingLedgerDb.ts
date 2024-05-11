@@ -70,7 +70,7 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
   try {
     await client.query('BEGIN');
     const batchSize = 1000;
-    console.log('Number of records:', dataArray.length);
+    console.debug('Number of records:', dataArray.length);
     for (let i = 0; i < dataArray.length; i += batchSize) {
       const batch = dataArray.slice(i, i + batchSize);
       console.debug(`Processing batch ${i} to ${i + batchSize}`);
