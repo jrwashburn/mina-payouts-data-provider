@@ -7,11 +7,13 @@ import configuration from '../configurations/environmentConfiguration';
 // blocks.timestamp is now text 
 // snarked ledger hash.value is now text
 
+export const getPoolCreatorIdQuery = `SELECT id FROM public_keys where value = $1`;
+
 const getBlocksQueryv1 = `
 WITH block_range AS (
   SELECT min(id) AS min_id, max(id) AS max_id
   FROM blocks
-  WHERE height >= $2 and height <= $3
+  WHERE height >= $2 AND height <= $3 AND creator_id = $4
 )
 SELECT
   b.id AS id,
@@ -132,6 +134,7 @@ WHERE
 AND pkc.value = $1
 AND b.height >= $2
 AND b.height <= $3
+AND b.creator_id = $4
 ORDER BY b.height DESC
 `;
 
@@ -139,7 +142,7 @@ const getBlocksQueryv2 = `
 WITH block_range AS (
   SELECT min(id) AS min_id, max(id) AS max_id
   FROM blocks
-  WHERE height >= $2 and height <= $3
+  WHERE height >= $2 AND height <= $3 AND creator_id = $4
 )
 SELECT
   b.id AS id,
@@ -260,6 +263,7 @@ WHERE
 AND pkc.value = $1
 AND b.height >= $2
 AND b.height <= $3
+AND b.creator_id = $4
 ORDER BY b.height DESC
 `;
 

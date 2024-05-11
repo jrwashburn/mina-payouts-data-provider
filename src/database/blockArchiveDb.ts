@@ -1,9 +1,7 @@
 import { Block, BlockSummary, Height } from '../models/blocks';
 import { createBlockQueryPool } from './databaseFactory'
-import configuration from '../configurations/environmentConfiguration';
-import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery } from './blockQueryFactory';
+import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory';
 
-console.debug(`Creating query pool targeting ${configuration.blockDbQueryHost} at port ${configuration.blockDbQueryPort}`);
 const pool = createBlockQueryPool();
 
 export async function getLatestBlock(): Promise<BlockSummary> {
@@ -32,32 +30,10 @@ export async function getNullParents(minHeight: number, maxHeight: number): Prom
 }
 
 export async function getBlocks(key: string, minHeight: number, maxHeight: number): Promise<Block[]> {
-  console.debug('Getting blocks in blockArchiveDb.ts for key:', key, 'minHeight:', minHeight, 'maxHeight:', maxHeight);
-  const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
-  console.debug('missingHeights:', missingHeights);
-  if (
-    (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
-    (minHeight > 0 && missingHeights.length > 0)
-  ) {
-    throw new Error(
-      `Archive database is missing blocks in the specified range. Import them and try again. Missing blocks were: ${JSON.stringify(
-        missingHeights,
-      )}`,
-    );
-  }
-  const nullParents = await getNullParents(minHeight, maxHeight);
-  console.debug('nullParents:', nullParents);
-  if (
-    (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
-    (minHeight > 0 && nullParents.length > 0)
-  ) {
-    throw new Error(
-      `Archive database has null parents in the specified range. Import them and try again. Blocks with null parents were: ${JSON.stringify(
-        nullParents,
-      )}`,
-    );
-  }
-  const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString()]);
+  await validateConsistency(minHeight, maxHeight);
+  const creatorResult = await pool.query(getPoolCreatorIdQuery, [key]);
+  const creatorId = creatorResult.rows[0].id;
+  const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
   const blocks: Block[] = result.rows.map(row => ({
     blockheight: Number(row.blockheight),
     statehash: String(row.statehash),
@@ -102,3 +78,28 @@ export async function getEpoch(hash: string, userSpecifiedEpoch: number | null):
   return -1;
 }
 
+export async function validateConsistency(minHeight: number, maxHeight: number): Promise<void> {
+  const missingHeights: number[] = await getHeightMissing(minHeight, maxHeight);
+  if (
+    (minHeight === 0 && (missingHeights.length > 1 || missingHeights[0] != 0)) ||
+    (minHeight > 0 && missingHeights.length > 0)
+  ) {
+    throw new Error(
+      `Archive database is missing blocks in the specified range. Import them and try again. Missing blocks were: ${JSON.stringify(
+        missingHeights,
+      )}`,
+    );
+  }
+  const nullParents = await getNullParents(minHeight, maxHeight);
+  if (
+    (minHeight === 0 && (nullParents.length > 1 || nullParents[0] != 1)) ||
+    (minHeight > 0 && nullParents.length > 0)
+  ) {
+    throw new Error(
+      `Archive database has null parents in the specified range. Import them and try again. Blocks with null parents were: ${JSON.stringify(
+        nullParents,
+      )}`,
+    );
+  }
+
+}
