@@ -25,7 +25,7 @@ SELECT
   b.global_slot_since_genesis AS globalslotsincegenesis,
   pkc.value AS creatorpublickey,
   pkw.value AS winnerpublickey,
-  pk.value AS recevierpublickey,
+  pk.value AS receiverpublickey,
   coalesce(bif.coinbase, 0) AS coinbase,
   coalesce(bif2.feeTransferToReceiver, 0) AS feetransfertoreceiver,
   coalesce(bif.feeTransferFromCoinbase, 0) AS feetransferfromcoinbase,
@@ -90,7 +90,7 @@ FROM
       blocks_user_commands buc
     INNER JOIN user_commands uc ON buc.user_command_id = uc.id
     WHERE
-      buc.status = 'applied' and buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
+      buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
     GROUP BY
       buc.block_id
   ) btf ON b.id = btf.block_id
@@ -154,7 +154,7 @@ SELECT
   b.global_slot_since_genesis AS globalslotsincegenesis,
   pkc.value AS creatorpublickey,
   pkw.value AS winnerpublickey,
-  pk.value AS recevierpublickey,
+  pk.value AS receiverpublickey,
   coalesce(bif.coinbase, 0) AS coinbase,
   coalesce(bif2.feeTransferToReceiver, 0) AS feetransfertoreceiver,
   coalesce(bif.feeTransferFromCoinbase, 0) AS feetransferfromcoinbase,
@@ -219,7 +219,7 @@ FROM
       blocks_user_commands buc
     INNER JOIN user_commands uc ON buc.user_command_id = uc.id
     WHERE
-      buc.status = 'applied' and buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
+      buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
     GROUP BY
       buc.block_id
   ) btf ON b.id = btf.block_id
