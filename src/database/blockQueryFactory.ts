@@ -90,7 +90,7 @@ FROM
       blocks_user_commands buc
     INNER JOIN user_commands uc ON buc.user_command_id = uc.id
     WHERE
-      buc.status = 'applied' and buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
+      buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
     GROUP BY
       buc.block_id
   ) btf ON b.id = btf.block_id
@@ -219,7 +219,7 @@ FROM
       blocks_user_commands buc
     INNER JOIN user_commands uc ON buc.user_command_id = uc.id
     WHERE
-      buc.status = 'applied' and buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
+      and buc.block_id >= (SELECT min_id FROM block_range) AND buc.block_id <= (SELECT max_id FROM block_range)
     GROUP BY
       buc.block_id
   ) btf ON b.id = btf.block_id
