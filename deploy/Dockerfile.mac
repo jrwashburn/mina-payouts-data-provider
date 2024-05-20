@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG NODE_VERSION=21.7.2
+ARG NODE_VERSION=22.1
 
 FROM node:${NODE_VERSION}-alpine
 RUN apk update && apk upgrade --no-cache openssl
