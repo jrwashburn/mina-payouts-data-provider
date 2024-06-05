@@ -89,13 +89,13 @@ router.get('/:ledgerHash', async (req, res) => {
 });
 
 router.get('/epoch/:epoch', async (req, res) => {
-  const key = req.query.key as string;
+  res.status(501).send('Getting epoch by number not supported after hard fork');
+  /*const key = req.query.key as string;
   const epoch = parseInt(req.params.epoch);
   if (!key) {
     return res.status(400).send('No key provided');
   }
-  res.status(501).send('Getting epoch by number not supported after hard fork');
-  /*try {
+  try {
     const controllerResponse: ControllerResponse = await getLedgerFromEpochForKey(key, epoch);
     const responseData: Ledger = controllerResponse.responseData as Ledger;
     const response = {
