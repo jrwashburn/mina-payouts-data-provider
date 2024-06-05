@@ -20,7 +20,7 @@ const upload = multer({
     }
   }),
   limits: {
-    fileSize: 150 * 1024 * 1024, // limit file size to 150MB
+    fileSize: 500 * 1024 * 1024, // limit file size to 500MB
   },
 });
 const user = configuration.ledgerUploadApiUser;
@@ -94,7 +94,8 @@ router.get('/epoch/:epoch', async (req, res) => {
   if (!key) {
     return res.status(400).send('No key provided');
   }
-  try {
+  res.status(501).send('Getting epoch by number not supported after hard fork');
+  /*try {
     const controllerResponse: ControllerResponse = await getLedgerFromEpochForKey(key, epoch);
     const responseData: Ledger = controllerResponse.responseData as Ledger;
     const response = {
@@ -108,6 +109,6 @@ router.get('/epoch/:epoch', async (req, res) => {
   catch (error) {
     req.log.error(error);
     res.status(500).send('An error occurred getting staking ledger information');
-  }
+  }*/
 });
 export default router;
