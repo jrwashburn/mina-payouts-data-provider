@@ -3,7 +3,7 @@ import express from 'express';
 import multer from 'multer';
 import basicAuth from 'express-basic-auth';
 import configuration from '../configurations/environmentConfiguration';
-import { getLedgerFromHashForKey, getLedgerFromEpochForKey } from '../controllers/stakingLedgersQuery';
+import { getLedgerFromHashForKey } from '../controllers/stakingLedgersQuery';
 import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
 import { ControllerResponse } from '../models/controller';
 import { Ledger, StakingLedgerSourceRow } from '../models/stakes';
