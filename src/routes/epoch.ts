@@ -1,16 +1,16 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import * as db from '../database/blockArchiveDb';
 import { BlockSummary } from '../models/blocks';
 import configuration from '../configurations/environmentConfiguration';
 
 const router = express.Router();
 
-router.get('/:epoch/', async (req, res) => {
+router.get('/:epoch/', async (req: Request<{ epoch: Number }>, res: Response): Promise<void> => {
   const epoch = Number(req.params.epoch);
   const messages: { [key: string]: string }[] = [];
 
   if (!Number.isInteger(epoch) || epoch < 0) {
-    return res.status(400).send('Invalid epoch');
+    res.status(400).send('Invalid epoch');
   }
 
   let { fork } = req.query as unknown as { fork: number };
@@ -20,7 +20,7 @@ router.get('/:epoch/', async (req, res) => {
   }
 
   if (fork > 0 && configuration.blockDbVersion == 'v1') {
-    return res.status(400).send('Invalid fork for this archive database version');
+    res.status(400).send('Invalid fork for this archive database version');
   }
 
   try {
@@ -37,13 +37,13 @@ router.get('/:epoch/', async (req, res) => {
     }
     req.log.info(response, `Epoch data for epoch ${epoch} and fork ${fork}`);
     if (epochMinBlockHeight === null || epochMinBlockHeight === undefined) {
-      return res.status(404).send(`No data found for epoch ${epoch} and fork ${fork}`);
+      res.status(404).send(`No data found for epoch ${epoch} and fork ${fork}`);
     } else {
-      return res.status(200).json(response);
+      res.status(200).json(response);
     }
   } catch (err) {
     req.log.error(err);
-    return res.status(500).send('An error has occured getting epoch data');
+    res.status(500).send('An error has occured getting epoch data');
   }
 });
 
