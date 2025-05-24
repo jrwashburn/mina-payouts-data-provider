@@ -11,6 +11,7 @@ router.get('/:epoch/', async (req: Request<{ epoch: Number }>, res: Response): P
 
   if (!Number.isInteger(epoch) || epoch < 0) {
     res.status(400).send('Invalid epoch');
+    return;
   }
 
   let { fork } = req.query as unknown as { fork: number };
