@@ -1,9 +1,11 @@
-import { ApolloClient, InMemoryCache, HttpLink, gql } from '@apollo/client/core';
+import apolloCore from '@apollo/client/core/core.cjs';
 import cron from 'node-cron';
-import configuration from '../configurations/environmentConfiguration';
-import { getLatestBlock, getHeightMissing, getNullParents } from '../database/blockArchiveDb';
-import { BlockSummary } from '../models/blocks';
-import { logger } from '../index';
+import configuration from '../configurations/environmentConfiguration.js';
+import { getLatestBlock, getHeightMissing, getNullParents } from '../database/blockArchiveDb.js';
+import { BlockSummary } from '../models/blocks.js';
+import { logger } from '../index.js';
+
+const { ApolloClient, InMemoryCache, HttpLink, gql } = apolloCore;
 
 // Define the GraphQL query
 const query = gql`

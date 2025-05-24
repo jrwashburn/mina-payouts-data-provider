@@ -4,11 +4,11 @@ import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
 import multer from 'multer';
 import basicAuth from 'express-basic-auth';
-import configuration from '../configurations/environmentConfiguration';
-import { getLedgerFromHashForKey } from '../controllers/stakingLedgersQuery';
-import { uploadStakingLedger } from '../controllers/stakingLedgersCommand';
-import { ControllerResponse } from '../models/controller';
-import { Ledger, StakingLedgerSourceRow } from '../models/stakes';
+import configuration from '../configurations/environmentConfiguration.js';
+import { getLedgerFromHashForKey } from '../controllers/stakingLedgersQuery.js';
+import { uploadStakingLedger } from '../controllers/stakingLedgersCommand.js';
+import { ControllerResponse } from '../models/controller.js';
+import { Ledger, StakingLedgerSourceRow } from '../models/stakes.js';
 import fs from 'fs';
 
 interface LedgerParams extends ParamsDictionary { ledgerHash: string; }
@@ -25,10 +25,10 @@ interface GetLedgerResponse {
 const router = express.Router();
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: function (_req, _file, cb) {
       cb(null, '/tmp') // Use /tmp directory
     },
-    filename: function (req, file, cb) {
+    filename: function (_req, file, cb) {
       cb(null, file.fieldname + '-' + Date.now())
     }
   }),
@@ -121,7 +121,7 @@ router.get<LedgerParams, GetLedgerResponse | string, unknown, Query>(
   }
 );
 
-router.get('/epoch/:epoch', async (req, res) => {
+router.get('/epoch/:epoch', async (_req, res) => {
   res.status(501).send('Getting epoch by number not supported after hard fork');
 });
 export default router;

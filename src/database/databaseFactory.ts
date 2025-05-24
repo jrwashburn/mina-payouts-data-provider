@@ -1,5 +1,5 @@
 import { Pool, PoolConfig } from 'pg';
-import configuration from '../configurations/environmentConfiguration';
+import configuration from '../configurations/environmentConfiguration.js';
 
 function createConfig(user: string, host: string, database: string, password: string, port: number, certificate: string, useSSL: boolean): PoolConfig {
   return useSSL ? {

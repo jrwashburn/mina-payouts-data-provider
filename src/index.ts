@@ -6,15 +6,15 @@ import responseTime from 'response-time';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 
-import configuration from './configurations/environmentConfiguration';
-import startBackgroundTask from './jobs/archiveDbRecencyChecker';
-import { checkTrustArchiveDatabaseHeight } from './middlewares/checkTrustArchiveDatabaseHeight';
+import configuration from './configurations/environmentConfiguration.js';
+import startBackgroundTask from './jobs/archiveDbRecencyChecker.js';
+import { checkTrustArchiveDatabaseHeight } from './middlewares/checkTrustArchiveDatabaseHeight.js';
 
-import consensusRouter from './routes/consensus';
-import epochRouter from './routes/epoch';
-import blocksRouter from './routes/blocks';
-import stakingLedgerRouter from './routes/stakingLedgers';
-import healthRouter from './routes/health';
+import consensusRouter from './routes/consensus.js';
+import epochRouter from './routes/epoch.js';
+import blocksRouter from './routes/blocks.js';
+import stakingLedgerRouter from './routes/stakingLedgers.js';
+import healthRouter from './routes/health.js';
 
 const limiter = rateLimit({
   windowMs: 2 * 60 * 1000, // 2 minutes
@@ -22,15 +22,18 @@ const limiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
 });
+
+// @ts-expect-error pino default export interop
 export const logger = pino({
   level: configuration.logLevel || 'info',
   formatters: {
-    level: (label) => {
+    level: (label: string) => {
       return { level: label.toUpperCase() };
     },
   },
   timestamp: pino.stdTimeFunctions.isoTime,
 });
+// @ts-expect-error pino-http default export interop
 const expressLogger = pinoHttp({
   logger, redact: {
     paths: ['req.headers', 'req.body', 'res.headers'],

@@ -1,5 +1,5 @@
 import express from 'express';
-import * as db from '../database/blockArchiveDb';
+import * as db from '../database/blockArchiveDb.js';
 
 const router = express.Router();
 

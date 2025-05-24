@@ -1,7 +1,7 @@
-import configuration from '../configurations/environmentConfiguration';
-import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes';
-import { getEpoch } from './blockArchiveDb';
-import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
+import configuration from '../configurations/environmentConfiguration.js';
+import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes.js';
+import { getEpoch } from './blockArchiveDb.js';
+import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js'
 
 console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
 const sldb = createLedgerQueryPool();

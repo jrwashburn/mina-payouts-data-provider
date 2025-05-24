@@ -1,12 +1,13 @@
 {
   "name": "mina-payouts-data-provider",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "Data provider API for mina-pool-payouts",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc --outDir dist",
-    "dev": "nodemon --exec ts-node src/index.ts | pino-pretty",
-    "dev-sl": "nodemon --exec ts-node src/stakingLedgers/api.ts",
+    "dev": "nodemon --watch src --ext ts --exec \"npm run build && node dist/index.js\" | pino-pretty",
+    "dev-sl": "nodemon --watch src --ext ts --exec \"npm run build && node dist/index.js\" | pino-pretty",
     "lint": "eslint '*/**/*.{js,ts}' --quiet --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,9 +24,10 @@
     "express-rate-limit": "^7.5.0",
     "graphql": "^16.11.0",
     "helmet": "^8.1.0",
-    "multer": "^1.4.5-lts.2",
+    "multer": "^2.0.0",
     "node-cron": "^3.0.3",
     "pg": "^8.15.6",
+    "pino": "^9.7.0",
     "pino-http": "^10.4.0",
     "response-time": "^2.3.3",
     "typescript": "^5.8.3"
@@ -34,6 +36,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.21",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.11.14",
     "@types/response-time": "^2.3.8",
@@ -42,6 +45,7 @@
     "eslint": "^9.25.1",
     "nodemon": "^3.1.10",
     "pino-pretty": "^13.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript-eslint": "^8.32.1"
   }
 }

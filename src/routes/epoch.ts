@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
-import * as db from '../database/blockArchiveDb';
-import { BlockSummary } from '../models/blocks';
-import configuration from '../configurations/environmentConfiguration';
+import * as db from '../database/blockArchiveDb.js';
+import { BlockSummary } from '../models/blocks.js';
+import configuration from '../configurations/environmentConfiguration.js';
 
 const router = express.Router();
 
-router.get('/:epoch/', async (req: Request<{ epoch: Number }>, res: Response): Promise<void> => {
+router.get('/:epoch/', async (req: Request<{ epoch: number }>, res: Response): Promise<void> => {
   const epoch = Number(req.params.epoch);
   const messages: { [key: string]: string }[] = [];
 
