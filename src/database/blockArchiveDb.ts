@@ -34,7 +34,22 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
   if (creatorResult.rows.length > 0 && 'id' in creatorResult.rows[0]) {
     const creatorId = (creatorResult.rows[0] as unknown as { id: number }).id;
     const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
-    return result.rows as unknown as Block[];
+    const blocks: Block[] = result.rows.map(row => ({
+      blockheight: Number(row.blockheight),
+      statehash: String(row.statehash),
+      stakingledgerhash: String(row.stakingledgerhash),
+      blockdatetime: Number(row.blockdatetime),
+      slot: Number(row.slot),
+      globalslotsincegenesis: Number(row.globalslotsincegenesis),
+      creatorpublickey: String(row.creatorpublickey),
+      winnerpublickey: String(row.winnerpublickey),
+      receiverpublickey: String(row.receiverpublickey),
+      coinbase: Number(row.coinbase),
+      feetransfertoreceiver: Number(row.feetransfertoreceiver),
+      feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
+      usercommandtransactionfees: Number(row.usercommandtransactionfees),
+    }));
+    return blocks;
   } else {
     throw new Error(`No creator ID found for key: ${key}`);
   }
