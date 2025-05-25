@@ -53,23 +53,6 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
   } else {
     throw new Error(`No creator ID found for key: ${key}`);
   }
-
-  /*const blocks: Block[] = result.rows.map(row => ({
-    blockheight: Number(row.blockheight),
-    statehash: String(row.statehash),
-    stakingledgerhash: String(row.stakingledgerhash),
-    blockdatetime: Number(row.blockdatetime),
-    slot: Number(row.slot),
-    globalslotsincegenesis: Number(row.globalslotsincegenesis),
-    creatorpublickey: String(row.creatorpublickey),
-    winnerpublickey: String(row.winnerpublickey),
-    receiverpublickey: String(row.receiverpublickey),
-    coinbase: Number(row.coinbase),
-    feetransfertoreceiver: Number(row.feetransfertoreceiver),
-    feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
-    usercommandtransactionfees: Number(row.usercommandtransactionfees),
-  }));
-  return blocks;*/
 }
 
 export async function getEpoch(hash: string, userSpecifiedEpoch: number | null): Promise<number> {
