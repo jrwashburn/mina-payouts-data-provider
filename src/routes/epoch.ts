@@ -22,6 +22,7 @@ router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): P
 
   if (fork > 0 && configuration.blockDbVersion == 'v1') {
     res.status(400).send('Invalid fork for this archive database version');
+    return;
   }
 
   try {
@@ -39,12 +40,15 @@ router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): P
     req.log.info(response, `Epoch data for epoch ${epoch} and fork ${fork}`);
     if (epochMinBlockHeight === null || epochMinBlockHeight === undefined) {
       res.status(404).send(`No data found for epoch ${epoch} and fork ${fork}`);
+      return;
     } else {
       res.status(200).json(response);
+      return;
     }
   } catch (err) {
     req.log.error(err);
     res.status(500).send('An error has occured getting epoch data');
+    return;
   }
 });
 
