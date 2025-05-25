@@ -66,7 +66,7 @@ router.post<
     else {
       const hash: string = req.params.ledgerHash;
       const userSpecifiedEpoch: number | null = req.query.epoch as unknown as number | null;
-      req.log.info(`uploading ${req.file.originalname} with hash ${req.params.hash} and epoch ${userSpecifiedEpoch}`);
+      req.log.info(`uploading ${req.file.originalname} with hash ${hash} and epoch ${userSpecifiedEpoch}`);
       try {
         const ledgerJson: StakingLedgerSourceRow[] = JSON.parse(fs.readFileSync(req.file.path, 'utf8'));
         const controllerResponse: ControllerResponse = await uploadStakingLedger(req.log, ledgerJson, hash, userSpecifiedEpoch);
