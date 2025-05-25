@@ -5,7 +5,7 @@ import configuration from '../configurations/environmentConfiguration.js';
 
 const router = express.Router();
 
-router.get('/:epoch/', async (req: Request<{ epoch: number }>, res: Response): Promise<void> => {
+router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): Promise<void> => {
   const epoch = Number(req.params.epoch);
   const messages: { [key: string]: string }[] = [];
 
