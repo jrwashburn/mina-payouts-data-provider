@@ -65,7 +65,6 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
 function safeNumeric(val: number | string | null | undefined, maxAbs: number = 1e10): number | string | null {
   if (val === null || val === undefined) return null;
   if (Math.abs(Number(val)) >= maxAbs) {
-    console.error(`Value ${val} exceeds DB numeric limit (${maxAbs}), setting to null`);
     throw new Error(`Value ${val} exceeds DB numeric limit (${maxAbs})`);
   }
   return val;
