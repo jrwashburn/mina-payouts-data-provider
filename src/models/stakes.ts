@@ -1,4 +1,4 @@
-import {ShareClass} from '../mina-addresses/minaAddressShareClass';
+import { ShareClass } from '../mina-addresses/minaAddressShareClass.js';
 export interface Ledger {
   stakes: Stake[];
   totalStakingBalance: number;

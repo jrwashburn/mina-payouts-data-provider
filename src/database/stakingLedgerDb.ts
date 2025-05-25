@@ -1,7 +1,7 @@
-import configuration from '../configurations/environmentConfiguration';
-import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes';
-import { getEpoch } from './blockArchiveDb';
-import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory'
+import configuration from '../configurations/environmentConfiguration.js';
+import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes.js';
+import { getEpoch } from './blockArchiveDb.js';
+import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js'
 
 console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
 const sldb = createLedgerQueryPool();
@@ -62,6 +62,14 @@ export async function hashExists(hash: string, userSpecifiedEpoch: number | null
   return [hashExists, hashEpoch];
 }
 
+function safeNumeric(val: number | string | null | undefined, maxAbs: number = 1e10): number | string | null {
+  if (val === null || val === undefined) return null;
+  if (Math.abs(Number(val)) >= maxAbs) {
+    throw new Error(`Value ${val} exceeds DB numeric limit (${maxAbs})`);
+  }
+  return val;
+}
+
 export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
   console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
@@ -78,14 +86,14 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
         '${hash}',
         ${epoch},
         '${item.pk}',
-        ${item.balance},
+        ${safeNumeric(item.balance, 1e19)},
         '${item.delegate}',
         '${item.token}',
         '${item.receipt_chain_hash}',
         '${item.voting_for}',
-        ${item.timing?.initial_minimum_balance ?? null},
+        ${safeNumeric(item.timing?.initial_minimum_balance ?? null, 1e19)},
         ${item.timing?.cliff_time ?? null},
-        ${item.timing?.cliff_amount ?? null},
+        ${safeNumeric(item.timing?.cliff_amount ?? null, 1e19)},
         ${item.timing?.vesting_period ?? null},
         ${item.timing?.vesting_increment ?? null}
       )`).join(',');

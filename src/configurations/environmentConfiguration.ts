@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { Configuration } from '../models/configuration';
+import { Configuration } from '../models/configuration.js';
 
 const configuration: Configuration = loadConfiguration();
 

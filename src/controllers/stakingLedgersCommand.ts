@@ -1,7 +1,7 @@
-import { hashExists, updateEpoch, insertBatch } from '../database/stakingLedgerDb';
-import { getEpoch } from '../database/blockArchiveDb';
-import { ControllerResponse } from '../models/controller';
-import { StakingLedgerSourceRow } from '../models/stakes';
+import { hashExists, updateEpoch, insertBatch } from '../database/stakingLedgerDb.js';
+import { getEpoch } from '../database/blockArchiveDb.js';
+import { ControllerResponse } from '../models/controller.js';
+import { StakingLedgerSourceRow } from '../models/stakes.js';
 import { Logger } from 'pino';
 
 export async function uploadStakingLedger(log: Logger, ledgerJson: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null) {

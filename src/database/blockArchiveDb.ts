@@ -1,6 +1,6 @@
-import { Block, BlockSummary, Height } from '../models/blocks';
-import { createBlockQueryPool } from './databaseFactory'
-import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory';
+import { Block, BlockSummary, Height } from '../models/blocks.js';
+import { createBlockQueryPool } from './databaseFactory.js'
+import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory.js';
 
 const pool = createBlockQueryPool();
 
@@ -12,53 +12,56 @@ export async function getLatestBlock(): Promise<BlockSummary> {
 
 export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork: number): Promise<[number, number]> {
   const result = await pool.query(getMinMaxBlocksInSlotRangeQuery(fork), [min, max]);
-  const epochminblockheight = result.rows[0].epochminblockheight;
-  const epochmaxblockheight = result.rows[0].epochmaxblockheight;
-  return [epochminblockheight, epochmaxblockheight];
+  const row = result.rows[0] as unknown as { epochminblockheight: number; epochmaxblockheight: number };
+  return [row.epochminblockheight, row.epochmaxblockheight];
 }
 
 export async function getHeightMissing(minHeight: number, maxHeight: number): Promise<number[]> {
   const result = await pool.query(getHeightMissingQuery, [minHeight, maxHeight]);
-  const heights: Height[] = result.rows;
+  const heights: Height[] = result.rows as unknown as Height[];
   return heights.map((x) => x.height);
 }
 
 export async function getNullParents(minHeight: number, maxHeight: number): Promise<number[]> {
   const result = await pool.query(getNullParentsQuery, [minHeight, maxHeight]);
-  const heights: Height[] = result.rows;
+  const heights: Height[] = result.rows as unknown as Height[];
   return heights.map((x) => x.height);
 }
 
 export async function getBlocks(key: string, minHeight: number, maxHeight: number): Promise<Block[]> {
   await validateConsistency(minHeight, maxHeight);
   const creatorResult = await pool.query(getPoolCreatorIdQuery, [key]);
-  const creatorId = creatorResult.rows[0].id;
-  const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
-  const blocks: Block[] = result.rows.map(row => ({
-    blockheight: Number(row.blockheight),
-    statehash: String(row.statehash),
-    stakingledgerhash: String(row.stakingledgerhash),
-    blockdatetime: Number(row.blockdatetime),
-    slot: Number(row.slot),
-    globalslotsincegenesis: Number(row.globalslotsincegenesis),
-    creatorpublickey: String(row.creatorpublickey),
-    winnerpublickey: String(row.winnerpublickey),
-    receiverpublickey: String(row.receiverpublickey),
-    coinbase: Number(row.coinbase),
-    feetransfertoreceiver: Number(row.feetransfertoreceiver),
-    feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
-    usercommandtransactionfees: Number(row.usercommandtransactionfees),
-  }));
-  return blocks;
+  if (creatorResult.rows.length > 0 && 'id' in creatorResult.rows[0]) {
+    const creatorId = (creatorResult.rows[0] as unknown as { id: number }).id;
+    const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
+    const blocks: Block[] = result.rows.map(row => ({
+      blockheight: Number(row.blockheight),
+      statehash: String(row.statehash),
+      stakingledgerhash: String(row.stakingledgerhash),
+      blockdatetime: Number(row.blockdatetime),
+      slot: Number(row.slot),
+      globalslotsincegenesis: Number(row.globalslotsincegenesis),
+      creatorpublickey: String(row.creatorpublickey),
+      winnerpublickey: String(row.winnerpublickey),
+      receiverpublickey: String(row.receiverpublickey),
+      coinbase: Number(row.coinbase),
+      feetransfertoreceiver: Number(row.feetransfertoreceiver),
+      feetransferfromcoinbase: Number(row.feetransferfromcoinbase),
+      usercommandtransactionfees: Number(row.usercommandtransactionfees),
+    }));
+    return blocks;
+  } else {
+    throw new Error(`No creator ID found for key: ${key}`);
+  }
 }
 
 export async function getEpoch(hash: string, userSpecifiedEpoch: number | null): Promise<number> {
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
   const result = await pool.query(getEpochQuery, [hash]);
 
-  if (result.rows[0].min && result.rows[0].max) {
-    const minGlobalSlot = Number.parseFloat(result.rows[0].min);
-    const maxGlobalSlot = Number.parseFloat(result.rows[0].max);
+  if (result.rows.length > 0 && 'min' in result.rows[0] && 'max' in result.rows[0]) {
+    const minGlobalSlot = Number.parseFloat(String(result.rows[0].min));
+    const maxGlobalSlot = Number.parseFloat(String(result.rows[0].max));
     const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
 
     const epoch = Math.floor(minGlobalSlot / slotsInEpoch);

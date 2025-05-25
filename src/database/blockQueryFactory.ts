@@ -1,4 +1,4 @@
-import configuration from '../configurations/environmentConfiguration';
+import configuration from '../configurations/environmentConfiguration.js';
 
 //Berkeley changes for user_commands and internal_commands:
 // type is now command_type

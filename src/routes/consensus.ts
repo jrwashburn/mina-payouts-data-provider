@@ -1,7 +1,7 @@
 import express from 'express';
-import * as db from '../database/blockArchiveDb';
-import { BlockSummary } from '../models/blocks';
-import configuration from '../configurations/environmentConfiguration';
+import * as db from '../database/blockArchiveDb.js';
+import { BlockSummary } from '../models/blocks.js';
+import configuration from '../configurations/environmentConfiguration.js';
 
 const router = express.Router();
 
