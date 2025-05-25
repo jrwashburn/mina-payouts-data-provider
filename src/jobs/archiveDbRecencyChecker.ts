@@ -7,7 +7,6 @@ import { logger } from '../index.js';
 
 const { ApolloClient, InMemoryCache, HttpLink, gql } = apolloCore;
 
-// Define the GraphQL query
 const query = gql`
   query MyQuery {
     bestChain(maxLength: 1) {
@@ -23,7 +22,6 @@ const query = gql`
   }
 `;
 
-// Create a function that sends the GraphQL query to a node and returns the block height
 async function getBlockHeightFromNode(node: string): Promise<number> {
   const client = new ApolloClient({
     link: new HttpLink({ uri: node, fetch }),
@@ -33,13 +31,11 @@ async function getBlockHeightFromNode(node: string): Promise<number> {
   return Number(data.bestChain[0].protocolState.consensusState.blockHeight);
 }
 
-// Create a function that gets the current block height from the /consensus endpoint
 async function getCurrentBlockHeight(): Promise<number> {
   const blockSummary: BlockSummary = await getLatestBlock();
   return blockSummary.blockheight;
 }
 
-// Create a function that compares the block heights and updates the database if necessary
 async function compareBlockHeights(): Promise<boolean> {
   let trustArchive = true;
   let blockHeightFromNode = 0;
@@ -74,10 +70,10 @@ async function compareBlockHeights(): Promise<boolean> {
   return trustArchive;
 }
 
-async function checkMissingHeightsLast5000Blocks(): Promise<boolean> {
+async function checkMissingHeightsLast7500Blocks(): Promise<boolean> {
   let trustArchive = true
   const blockHeightFromArchiveDb = await getCurrentBlockHeight();
-  const lowerBoundary = blockHeightFromArchiveDb - 5000 > 0 ? blockHeightFromArchiveDb - 5000 : 0;
+  const lowerBoundary = blockHeightFromArchiveDb - 7500 > 0 ? blockHeightFromArchiveDb - 7500 : 0;
   const missingHeights = await getHeightMissing(lowerBoundary, blockHeightFromArchiveDb);
   if (missingHeights.length > 0) {
     logger.warn(`Archive database is missing blocks since height ${lowerBoundary}. Missing blocks: ${JSON.stringify(missingHeights)}`);
@@ -89,10 +85,10 @@ async function checkMissingHeightsLast5000Blocks(): Promise<boolean> {
   return trustArchive;
 }
 
-async function checkNullParentsLast5000Blocks(): Promise<boolean> {
+async function checkNullParentsLast7500Blocks(): Promise<boolean> {
   let trustArchive = true
   const blockHeightFromArchiveDb = await getCurrentBlockHeight();
-  const lowerBoundary = blockHeightFromArchiveDb - 5000 > 0 ? blockHeightFromArchiveDb - 5000 : 0;
+  const lowerBoundary = blockHeightFromArchiveDb - 7500 > 0 ? blockHeightFromArchiveDb - 7500 : 0;
   const nullParents = await getNullParents(lowerBoundary, blockHeightFromArchiveDb);
   if (nullParents.length > 0) {
     logger.warn(`Archive database has null parents. The following blocks are missing parent: ${JSON.stringify(nullParents)}`);
@@ -107,8 +103,8 @@ async function checkNullParentsLast5000Blocks(): Promise<boolean> {
 async function validateArchiveDb() {
   try {
     const dbInSyncWithNodes = await compareBlockHeights();
-    const noMissingBlocks = await checkMissingHeightsLast5000Blocks();
-    const noNullParents = await checkNullParentsLast5000Blocks();
+    const noMissingBlocks = await checkMissingHeightsLast7500Blocks();
+    const noNullParents = await checkNullParentsLast7500Blocks();
     logger.info(`Archive db validation results: dbInSyncWithNodes: ${dbInSyncWithNodes}, noMissingBlocks: ${noMissingBlocks}, noNullParents: ${noNullParents}`);
     if (dbInSyncWithNodes && noMissingBlocks && noNullParents) {
       logger.info('Archive db is trusted. All checks passed.');
