@@ -1,15 +1,30 @@
 import configuration from '../configurations/environmentConfiguration.js';
 import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes.js';
 import { getEpoch } from './blockArchiveDb.js';
-import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js'
+import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js';
+import { Pool } from 'pg';
 
-console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
-const sldb = createLedgerQueryPool();
+let defaultQueryPool: Pool | null = null;
+let defaultCommandPool: Pool | null = null;
 
-console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
-const commanddb = createStakingLedgerCommandPool();
+function getQueryPool(): Pool {
+  if (!defaultQueryPool) {
+    console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
+    defaultQueryPool = createLedgerQueryPool();
+  }
+  return defaultQueryPool;
+}
 
-export async function getStakingLedgers(hash: string, key: string) {
+function getCommandPool(): Pool {
+  if (!defaultCommandPool) {
+    console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
+    defaultCommandPool = createStakingLedgerCommandPool();
+  }
+  return defaultCommandPool;
+}
+
+export async function getStakingLedgers(hash: string, key: string, customPool?: Pool) {
+  const pool = customPool || getQueryPool();
   const query = `SELECT 
 		public_key, 
 		balance, 
@@ -21,11 +36,12 @@ export async function getStakingLedgers(hash: string, key: string) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE hash = $1 AND delegate_key = $2`;
-  const result = await sldb.query(query, [hash, key]);
+  const result = await pool.query(query, [hash, key]);
   return buildLedgerEntries(result.rows);
 }
 
-export async function getStakingLedgersByEpoch(key: string, epoch: number) {
+export async function getStakingLedgersByEpoch(key: string, epoch: number, customPool?: Pool) {
+  const pool = customPool || getQueryPool();
   const query = `SELECT 
 		public_key, 
 		balance, 
@@ -37,26 +53,27 @@ export async function getStakingLedgersByEpoch(key: string, epoch: number) {
 		timing_vesting_increment 
 		FROM public.staking_ledger
 		WHERE delegate_key = $1 AND epoch = $2`;
-  const result = await sldb.query(query, [key, epoch.toString()]);
+  const result = await pool.query(query, [key, epoch.toString()]);
   return buildLedgerEntries(result.rows);
 }
 
-export async function hashExists(hash: string, userSpecifiedEpoch: number | null): Promise<[boolean, number | null]> {
+export async function hashExists(hash: string, userSpecifiedEpoch: number | null, customPool?: Pool): Promise<[boolean, number | null]> {
   console.debug(`hashExists called with hash: ${hash}`)
+  const pool = customPool || getQueryPool();
   const query = 'select count(*) from staking_ledger where hash=$1';
-  const result = await sldb.query(query, [hash]);
+  const result = await pool.query(query, [hash]);
   let hashEpoch = -1;
   let hashExists = result.rows[0].count > 0;
   console.debug('hashExists result:', result.rows[0], result.rows[0].count > 0)
   if (result.rows[0].count > 0 && userSpecifiedEpoch != null) {
     const query = 'select count(*) from staking_ledger where hash=$1 and epoch=$2';
-    const result = await sldb.query(query, [hash, userSpecifiedEpoch.toString()]);
+    const result = await pool.query(query, [hash, userSpecifiedEpoch.toString()]);
     console.debug('hashExists for user specified epoch:', result.rows[0], result.rows[0].count > 0)
     hashExists = result.rows[0].count > 0;
   }
   if (hashExists) {
     const query = 'select max(epoch) as epoch from staking_ledger where hash=$1';
-    const result = await sldb.query(query, [hash]);
+    const result = await pool.query(query, [hash]);
     hashEpoch = result.rows[0].epoch
   }
   return [hashExists, hashEpoch];
@@ -70,11 +87,12 @@ function safeNumeric(val: number | string | null | undefined, maxAbs: number = 1
   return val;
 }
 
-export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null): Promise<void> {
+export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null, customPool?: Pool): Promise<void> {
   console.debug(`insertBatch called: ${dataArray.length} records to insert.`);
   let epoch = -1;
   epoch = await getEpoch(hash, userSpecifiedEpoch);
-  const client = await commanddb.connect();
+  const pool = customPool || getCommandPool();
+  const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const batchSize = 1000;
@@ -145,8 +163,9 @@ function buildLedgerEntries(resultRows: TimedStakingLedgerResultRow[]): LedgerEn
   return ledgerEntries;
 }
 
-export async function updateEpoch(hash: string, epoch: number): Promise<void> {
+export async function updateEpoch(hash: string, epoch: number, customPool?: Pool): Promise<void> {
+  const pool = customPool || getCommandPool();
   const query = `UPDATE staking_ledger SET epoch = $1 WHERE hash = $2 and epoch = -1`;
-  await commanddb.query(query, [epoch.toString(), hash]);
+  await pool.query(query, [epoch.toString(), hash]);
 }
 
