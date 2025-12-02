@@ -21,6 +21,18 @@ export function createTestServer(): Application {
   app.use(express.json({ limit: '500mb' }));
   app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
+  // Mock logger middleware
+  app.use((req, _res, next) => {
+    // @ts-ignore - adding mock logger
+    req.log = {
+      info: () => {},
+      error: () => {},
+      warn: () => {},
+      debug: () => {},
+    };
+    next();
+  });
+
   // Mock the middleware that checks archive database height
   // For tests, we'll just pass through
   app.use((req, _res, next) => {

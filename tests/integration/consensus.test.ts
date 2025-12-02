@@ -14,6 +14,11 @@ describe('Consensus Endpoint', () => {
     it('should return current network consensus state', async () => {
       const response = await request(app).get('/consensus');
 
+      if (response.status !== 200) {
+        console.log('Response body:', response.body);
+        console.log('Response text:', response.text);
+      }
+
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('epoch');
       expect(response.body).toHaveProperty('blockHeight');
@@ -37,12 +42,12 @@ describe('Consensus Endpoint', () => {
       expect(epoch).toBe(expectedEpoch);
     });
 
-    it('should return valid block height as string', async () => {
+    it('should return valid block height as number', async () => {
       const response = await request(app).get('/consensus');
 
       expect(response.status).toBe(200);
-      expect(typeof response.body.blockHeight).toBe('string');
-      expect(/^\d+$/.test(response.body.blockHeight)).toBe(true);
+      expect(typeof response.body.blockHeight).toBe('number');
+      expect(response.body.blockHeight).toBeGreaterThan(0);
     });
 
     it('should return valid ISO 8601 datetime', async () => {
@@ -80,13 +85,16 @@ describe('Consensus Endpoint', () => {
       expect(response.body.ledgerHash).toMatch(/^j[a-zA-Z0-9]+$/);
     });
 
-    it('should return matching fixture data', async () => {
+    it('should return matching fixture data (numeric blockHeight)', async () => {
       const response = await request(app).get('/consensus');
 
       expect(response.status).toBe(200);
-      expect(response.body.epoch).toBe(fixtures.consensus.epoch);
-      expect(response.body.blockHeight).toBe(fixtures.consensus.blockHeight);
-      expect(response.body.slot).toBe(fixtures.consensus.slot);
+      // Epoch is calculated from globalslot, not stored directly
+      const expectedEpoch = Math.floor(fixtures.consensus.globalslot / 7140);
+      const expectedSlot = fixtures.consensus.globalslot - (expectedEpoch * 7140);
+      expect(response.body.epoch).toBe(expectedEpoch);
+      expect(response.body.blockHeight).toBe(fixtures.consensus.blockheight);
+      expect(response.body.slot).toBe(expectedSlot);
     });
   });
 
@@ -96,8 +104,8 @@ describe('Consensus Endpoint', () => {
 
       expect(response.status).toBe(200);
       expect(typeof response.body.epoch).toBe('number');
-      expect(typeof response.body.blockHeight).toBe('string');
-      expect(typeof response.body.globalSlotSinceGenesis).toBe('string');
+      expect(typeof response.body.blockHeight).toBe('number');
+      expect(typeof response.body.globalSlotSinceGenesis).toBe('number');
       expect(typeof response.body.slot).toBe('number');
       expect(typeof response.body.stateHash).toBe('string');
       expect(typeof response.body.parentHash).toBe('string');

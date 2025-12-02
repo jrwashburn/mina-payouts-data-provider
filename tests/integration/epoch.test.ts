@@ -20,20 +20,20 @@ describe('Epoch Endpoint', () => {
       expect(response.body).toHaveProperty('messages');
     });
 
-    it('should return block heights as strings', async () => {
+    it('should return block heights as numbers', async () => {
       const response = await request(app).get('/epoch/1');
 
       expect(response.status).toBe(200);
-      expect(typeof response.body.minBlockHeight).toBe('string');
-      expect(typeof response.body.maxBlockHeight).toBe('string');
+      expect(typeof response.body.minBlockHeight).toBe('number');
+      expect(typeof response.body.maxBlockHeight).toBe('number');
     });
 
-    it('should return numeric block height strings', async () => {
+    it('should return positive block heights', async () => {
       const response = await request(app).get('/epoch/1');
 
       expect(response.status).toBe(200);
-      expect(/^\d+$/.test(response.body.minBlockHeight)).toBe(true);
-      expect(/^\d+$/.test(response.body.maxBlockHeight)).toBe(true);
+      expect(response.body.minBlockHeight).toBeGreaterThanOrEqual(0);
+      expect(response.body.maxBlockHeight).toBeGreaterThan(0);
     });
 
     it('should have minBlockHeight <= maxBlockHeight', async () => {
