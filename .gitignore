@@ -14,6 +14,7 @@ deploy/*.crt
 tests/db-backups/
 tests/db-backups/*.dump
 tests/db-backups/*.sql
+coverage/
 
 # Docker volumes
 postgres-*-data/
