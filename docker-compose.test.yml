@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  # Archive database (read-only queries for blocks)
+  postgres-archive:
+    image: postgres:15-alpine
+    container_name: mppdp-test-archive
+    environment:
+      POSTGRES_DB: archive
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-archive-data:/var/lib/postgresql/data
+
+  # Staking ledger database (read/write for ledger data)
+  postgres-stakes:
+    image: postgres:15-alpine
+    container_name: mppdp-test-stakes
+    environment:
+      POSTGRES_DB: stakes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-stakes-data:/var/lib/postgresql/data
+      - ./deploy/db-setup:/docker-entrypoint-initdb.d
+
+volumes:
+  postgres-archive-data:
+  postgres-stakes-data:

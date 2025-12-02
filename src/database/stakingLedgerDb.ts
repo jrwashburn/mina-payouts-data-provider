@@ -3,10 +3,7 @@ import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from
 import { getEpoch } from './blockArchiveDb.js';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js'
 
-console.debug(`Creating query pool targeting ${configuration.ledgerDbQueryHost} at port ${configuration.ledgerDbQueryPort}`);
 const sldb = createLedgerQueryPool();
-
-console.debug(`Creating command pool targeting ${configuration.ledgerDbCommandHost} at port ${configuration.ledgerDbCommandPort}`);
 const commanddb = createStakingLedgerCommandPool();
 
 export async function getStakingLedgers(hash: string, key: string) {

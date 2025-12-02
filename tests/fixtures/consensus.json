@@ -1,0 +1,11 @@
+{
+  "epoch": 36,
+  "blockHeight": "495414",
+  "globalSlotSinceGenesis": "824027",
+  "slot": 2507,
+  "stateHash": "3NKTSb6Z1Ee5SFcHjsy776egZTQ2sDyVbr9RrGEmajZw1mveVDs5",
+  "parentHash": "3NLFuD5qTBEEZ34UFoJSCTNU6YDgFCXEU2n1krExXUdC5SEYCcEF",
+  "ledgerHash": "jxCiaABvp2uskGRPpMbm2HGujN5MiE2kPMnMR8icipcMcNqNRxo",
+  "datetime": "2025-11-27T17:21:00.000Z",
+  "messages": []
+}

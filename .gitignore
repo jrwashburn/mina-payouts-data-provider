@@ -8,3 +8,12 @@ dist/
 deploy/deployment*.yaml
 deploy/deploy*.sh
 deploy/*.crt
+
+# Test database backups - these are large and sensitive
+# Place production backups in tests/db-backups/ for local testing
+tests/db-backups/
+tests/db-backups/*.dump
+tests/db-backups/*.sql
+
+# Docker volumes
+postgres-*-data/

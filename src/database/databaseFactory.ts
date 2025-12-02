@@ -2,25 +2,32 @@ import { Pool, PoolConfig } from 'pg';
 import configuration from '../configurations/environmentConfiguration.js';
 
 function createConfig(user: string, host: string, database: string, password: string, port: number, certificate: string, useSSL: boolean): PoolConfig {
-  return useSSL ? {
+  const baseConfig: PoolConfig = {
     user,
     host,
     database,
     password,
     port,
+    // Aggressive timeouts for test environment and general reliability
     connectionTimeoutMillis: 2000,
     idleTimeoutMillis: 10000,
-    ssl: {
-      ca: certificate,
-      rejectUnauthorized: false,
-    },
-  } : {
-    user,
-    host,
-    database,
-    password,
-    port,
+    // Note: statement_timeout not set to avoid prematurely timing out large queries
+    // Limit pool size for test environment
+    max: 5,
+    min: 0,
   };
+
+  if (useSSL) {
+    return {
+      ...baseConfig,
+      ssl: {
+        ca: certificate,
+        rejectUnauthorized: false,
+      },
+    };
+  }
+
+  return baseConfig;
 }
 
 export function createBlockQueryPool() {

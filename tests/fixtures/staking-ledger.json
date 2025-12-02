@@ -1,0 +1,42 @@
+{
+  "stakes": [
+    {
+      "publicKey": "B62qiy8Z8XfQ9FrD6hGvEQrTHfRNRLX6nv3TDxVmLPfnPCRjMvZyAVG",
+      "stakingBalance": "495878.524316421",
+      "untimedAfterSlot": 0,
+      "shareClass": "Common"
+    },
+    {
+      "publicKey": "B62qrKTFzHMkCFsAUn3TKX6u3H1S6wyVnGFZmgx9J9EcqMMZA8j4e8Z",
+      "stakingBalance": "234567.123456789",
+      "untimedAfterSlot": 86400,
+      "shareClass": "Common"
+    },
+    {
+      "publicKey": "B62qpXcfjPMjt6jXHVRb1nF1RvYr6VEk5fVzs9YzfVZxPn7LgZWoTxL",
+      "stakingBalance": "123456.789012345",
+      "untimedAfterSlot": 691200,
+      "shareClass": "Common"
+    },
+    {
+      "publicKey": "B62qkSHbzPD3bKn7UQFqMx3GvH6i8RkZQVvn8dC3RHJYkMfz5qzV5pX",
+      "stakingBalance": "87654.321098765",
+      "untimedAfterSlot": 0,
+      "shareClass": "Common"
+    },
+    {
+      "publicKey": "B62qm1VnmF5mArYpN7nLB9TYmX1c3R9s8V2u1J4kM6LwN5p3zTqW8yN",
+      "stakingBalance": "56789.012345678",
+      "untimedAfterSlot": 0,
+      "shareClass": "Common"
+    },
+    {
+      "publicKey": "B62qnZ8hJ3kRxC5L6mN2pOu9V4wX1yZ3A7bD8eF9gH2i3jK4lM5nO6",
+      "stakingBalance": "0",
+      "untimedAfterSlot": 0,
+      "shareClass": "Common"
+    }
+  ],
+  "totalStakingBalance": "1014850.336964028",
+  "messages": []
+}
