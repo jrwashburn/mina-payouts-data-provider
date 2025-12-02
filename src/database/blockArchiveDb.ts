@@ -1,39 +1,47 @@
+import { Pool } from 'pg';
 import { Block, BlockSummary, Height } from '../models/blocks.js';
 import { createBlockQueryPool } from './databaseFactory.js'
 import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory.js';
 
-const pool = createBlockQueryPool();
+let pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (!pool) {
+    pool = createBlockQueryPool();
+  }
+  return pool;
+}
 
 export async function getLatestBlock(): Promise<BlockSummary> {
-  const result = await pool.query(getLastestBlockQuery);
+  const result = await getPool().query(getLastestBlockQuery);
   const blockSummary: BlockSummary = result.rows[0];
   return blockSummary;
 }
 
 export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork: number): Promise<[number, number]> {
-  const result = await pool.query(getMinMaxBlocksInSlotRangeQuery(fork), [min, max]);
+  const result = await getPool().query(getMinMaxBlocksInSlotRangeQuery(fork), [min, max]);
   const row = result.rows[0] as unknown as { epochminblockheight: number; epochmaxblockheight: number };
   return [row.epochminblockheight, row.epochmaxblockheight];
 }
 
 export async function getHeightMissing(minHeight: number, maxHeight: number): Promise<number[]> {
-  const result = await pool.query(getHeightMissingQuery, [minHeight, maxHeight]);
+  const result = await getPool().query(getHeightMissingQuery, [minHeight, maxHeight]);
   const heights: Height[] = result.rows as unknown as Height[];
   return heights.map((x) => x.height);
 }
 
 export async function getNullParents(minHeight: number, maxHeight: number): Promise<number[]> {
-  const result = await pool.query(getNullParentsQuery, [minHeight, maxHeight]);
+  const result = await getPool().query(getNullParentsQuery, [minHeight, maxHeight]);
   const heights: Height[] = result.rows as unknown as Height[];
   return heights.map((x) => x.height);
 }
 
 export async function getBlocks(key: string, minHeight: number, maxHeight: number): Promise<Block[]> {
   await validateConsistency(minHeight, maxHeight);
-  const creatorResult = await pool.query(getPoolCreatorIdQuery, [key]);
+  const creatorResult = await getPool().query(getPoolCreatorIdQuery, [key]);
   if (creatorResult.rows.length > 0 && 'id' in creatorResult.rows[0]) {
     const creatorId = (creatorResult.rows[0] as unknown as { id: number }).id;
-    const result = await pool.query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
+    const result = await getPool().query(getBlocksQuery, [key, minHeight.toString(), maxHeight.toString(), creatorId]);
     const blocks: Block[] = result.rows.map(row => ({
       blockheight: Number(row.blockheight),
       statehash: String(row.statehash),
@@ -57,7 +65,7 @@ export async function getBlocks(key: string, minHeight: number, maxHeight: numbe
 
 export async function getEpoch(hash: string, userSpecifiedEpoch: number | null): Promise<number> {
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
-  const result = await pool.query(getEpochQuery, [hash]);
+  const result = await getPool().query(getEpochQuery, [hash]);
 
   if (result.rows.length > 0 && 'min' in result.rows[0] && 'max' in result.rows[0]) {
     const minGlobalSlot = Number.parseFloat(String(result.rows[0].min));
