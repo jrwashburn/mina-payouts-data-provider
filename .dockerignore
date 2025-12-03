@@ -31,3 +31,7 @@ sample.env
 .DS_Store
 **/.env*
 **/*.crt
+tests/
+vitest.config.ts
+vitest.config.integration.ts
+docker-compose.test.yml

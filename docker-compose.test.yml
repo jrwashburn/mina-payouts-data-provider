@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # Archive database (read-only queries for blocks)
   postgres-archive:
