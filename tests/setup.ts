@@ -29,8 +29,8 @@ vi.mock('pg', () => {
 vi.mock('../src/database/blockArchiveDb.js', () => ({
   getLatestBlock: vi.fn(() => Promise.resolve({
     epoch: consensusFixture.epoch,
-    blockheight: Number(consensusFixture.blockHeight),
-    globalslotsincegenesis: Number(consensusFixture.globalSlotSinceGenesis),
+    blockheight: consensusFixture.blockHeight, // Return as string to match real database
+    globalslotsincegenesis: consensusFixture.globalSlotSinceGenesis, // Return as string to match real database
     globalslot: Number(consensusFixture.globalSlotSinceGenesis),
     slot: consensusFixture.slot,
     statehash: consensusFixture.stateHash,
@@ -46,8 +46,8 @@ vi.mock('../src/database/blockArchiveDb.js', () => ({
     return Promise.resolve(blocksFixture.blocks);
   }),
   getMinMaxBlocksInSlotRange: vi.fn(() => Promise.resolve([
-    Number(epochFixture.minBlockHeight),
-    Number(epochFixture.maxBlockHeight)
+    epochFixture.minBlockHeight, // Return as string to match real database
+    epochFixture.maxBlockHeight  // Return as string to match real database
   ])),
   getHeightMissing: vi.fn(() => Promise.resolve([])),
   getNullParents: vi.fn(() => Promise.resolve([])),
