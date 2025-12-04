@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import configuration from '../configurations/environmentConfiguration.js';
 import { LedgerEntry, TimedStakingLedgerResultRow, StakingLedgerSourceRow } from '../models/stakes.js';
 import { getEpoch } from './blockArchiveDb.js';
 import { createLedgerQueryPool, createStakingLedgerCommandPool } from './databaseFactory.js'
