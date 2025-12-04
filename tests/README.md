@@ -270,15 +270,6 @@ import { createTestServer } from '../utils/testServer';
 
 Without database mocking, tests that require database queries will fail. This is expected. Implement database mocking following the [Database Mocking](#database-mocking) section.
 
-## Jest Configuration
-
-Key settings in `jest.config.js`:
-
-- **preset**: `ts-jest` - TypeScript support
-- **testEnvironment**: `node` - Node.js environment
-- **extensionsToTreatAsEsm**: `['.ts']` - Treat TypeScript as ESM
-- **globals.ts-jest.useESM**: `true` - Use ESM loader
-
 ## Consensus Endpoint Special Handling
 
 The consensus endpoint returns a moving target (always the current network tip). Tests validate:
