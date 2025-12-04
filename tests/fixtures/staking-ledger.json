@@ -1,0 +1,75 @@
+{
+  "ledgerEntries": [
+    {
+      "pk": "B62qkWU8KTP44FSD43HdJcs8PGkTqbG9N7PF87idheAaHy8jL2JAXnj",
+      "balance": 495878.02184605,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qmNbNedwwDB3bLUzgeN6gAYXmnY4U9WBS6Ze92HghtU7x3v7a2sS",
+      "balance": 277339.092797069,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qoigHEtJCoZ5ekbGHWyr9hYfc6fkZ2A41h9vvVZuvty9amzEz3yB",
+      "balance": 109006.526205449,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qnr6wsfZxsxFk9xEZvsgKTLTmFmd9czVieRpEv4YnQmHUaVMMDTa",
+      "balance": 64934.280982264,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L",
+      "timing": {
+        "initial_minimum_balance": 44000,
+        "cliff_time": 86400,
+        "cliff_amount": 44000,
+        "vesting_period": 1,
+        "vesting_increment": 0
+      }
+    },
+    {
+      "pk": "B62qpjEJn5boKL7nqM7G49V4zY3jeE2M3czqG8FXJEbAADstvfF9T7Q",
+      "balance": 21505.000756681,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L",
+      "timing": {
+        "initial_minimum_balance": 66000,
+        "cliff_time": 172800,
+        "cliff_amount": 16500,
+        "vesting_period": 1,
+        "vesting_increment": 0.095486111
+      }
+    },
+    {
+      "pk": "B62qmMGz5dWhmrx7JgKtnmb4mqu87tqXsMr6wcRmnGzHrd3Y43iwhG9",
+      "balance": 21329.905791075,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L",
+      "timing": {
+        "initial_minimum_balance": 66000,
+        "cliff_time": 172800,
+        "cliff_amount": 16500,
+        "vesting_period": 1,
+        "vesting_increment": 0.095486111
+      }
+    },
+    {
+      "pk": "B62qoGEXsSDG69BoYUQUuiG8NJ25m1hM9VceF1F36ntC6qxqNBdzwCT",
+      "balance": 4870.5609377,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qnHjLNaDwc4WWy3BLJMmeS6YATWoTYd6MYJemF3uXRNaEoPAc9GV",
+      "balance": 2458.9562422,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qk449L7LDANBXVHdEcbvTnQqtxqweHptUwKqy1tHVxvGJrKapDwN",
+      "balance": 2450.021428215,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    },
+    {
+      "pk": "B62qmmFAkd55Vzz4f9F6v5zziAiEnBZArQrmumd3giacLNxhJ4ydHuZ",
+      "balance": 2151.389834529,
+      "delegate": "B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L"
+    }
+  ]
+}

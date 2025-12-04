@@ -23,7 +23,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-// @ts-expect-error pino default export interop
 export const logger = pino({
   level: configuration.logLevel || 'info',
   formatters: {

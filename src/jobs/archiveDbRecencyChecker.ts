@@ -47,8 +47,9 @@ async function compareBlockHeights(): Promise<boolean> {
       }
     } catch (error) {
       logger.warn(`Failed to get block height from node ${checkNode}: ${error}`);
-      if (error instanceof Error && 'response' in error) {
-        logger.warn('Raw response:', error.response);
+      const response = (error as { response?: unknown }).response;
+      if (response !== undefined) {
+        logger.warn({ response }, 'Raw response:');
       }
     }
   }

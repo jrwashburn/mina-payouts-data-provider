@@ -12,7 +12,7 @@ export default [
 			parserOptions: {
 				ecmaVersion: "latest",
 				sourceType: "module",
-				project: "./tsconfig.json",
+				project: "./tsconfig.eslint.json",
 			},
 			globals: {
 				...globals.node,
@@ -23,6 +23,30 @@ export default [
 		},
 		rules: {
 			...tsPlugin.configs.recommended.rules,
+		},
+	},
+	{
+		files: ["tests/**/*.ts"],
+		languageOptions: {
+			parser: tsParser,
+			parserOptions: {
+				ecmaVersion: "latest",
+				sourceType: "module",
+				project: "./tsconfig.eslint.json",
+			},
+			globals: {
+				...globals.node,
+				...globals.vitest,
+			},
+		},
+		plugins: {
+			"@typescript-eslint": tsPlugin,
+		},
+		rules: {
+			...tsPlugin.configs.recommended.rules,
+			"no-undef": "off",
+			"@typescript-eslint/no-explicit-any": "off",
+			"@typescript-eslint/ban-ts-comment": "off",
 		},
 	},
 	{

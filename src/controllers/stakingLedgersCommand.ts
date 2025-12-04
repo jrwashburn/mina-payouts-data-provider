@@ -5,7 +5,7 @@ import { StakingLedgerSourceRow } from '../models/stakes.js';
 import { Logger } from 'pino';
 
 export async function uploadStakingLedger(log: Logger, ledgerJson: StakingLedgerSourceRow[], hash: string, userSpecifiedEpoch: number | null) {
-  log.info('uploadStakingLedger called for hash:', hash);
+  log.info(`uploadStakingLedger called for hash: ${hash}`);
   const [isAlreadyImported, hashEpoch] = await hashExists(hash, userSpecifiedEpoch);
   if (isAlreadyImported) {
     if (hashEpoch == null || hashEpoch < 0) {
