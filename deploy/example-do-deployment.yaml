@@ -47,6 +47,10 @@ spec:
         env:
         - name: NUM_SLOTS_IN_EPOCH
           value: "7140"
+        - name: FORK_1_START_SLOT
+          value: "564480"
+        - name: FORK_2_START_SLOT
+          value: "0"
         - name: API_PORT
           value: "8080"
         - name: LEDGER_UPLOAD_API_USER

@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { Block, BlockSummary, Height } from '../models/blocks.js';
 import { createBlockQueryPool } from './databaseFactory.js'
 import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory.js';
+import configuration from '../configurations/environmentConfiguration.js';
 
 let pool: Pool | null = null;
 
@@ -19,7 +20,22 @@ export async function getLatestBlock(): Promise<BlockSummary> {
 }
 
 export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork: number): Promise<[number, number]> {
-  const result = await getPool().query(getMinMaxBlocksInSlotRangeQuery(fork), [min, max]);
+  let params: (number)[];
+
+  if (fork === 0) {
+    // Fork 0: pass minSlot, maxSlot, fork1StartSlot
+    params = [min, max, configuration.fork1StartSlot];
+  } else if (fork === 1) {
+    // Fork 1: pass minSlot, maxSlot, fork1StartSlot, fork2StartSlot
+    params = [min, max, configuration.fork1StartSlot, configuration.fork2StartSlot];
+  } else if (fork === 2) {
+    // Fork 2: pass minSlot, maxSlot, fork2StartSlot
+    params = [min, max, configuration.fork2StartSlot];
+  } else {
+    throw new Error(`Invalid fork: ${fork}`);
+  }
+
+  const result = await getPool().query(getMinMaxBlocksInSlotRangeQuery(fork), params);
   const row = result.rows[0] as unknown as { epochminblockheight: number; epochmaxblockheight: number };
   return [row.epochminblockheight, row.epochmaxblockheight];
 }

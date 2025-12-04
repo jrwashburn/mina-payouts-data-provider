@@ -14,14 +14,25 @@ router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): P
     return;
   }
 
-  let { fork } = req.query as unknown as { fork: number };
+  let fork = Number(req.query.fork);
   if (isNaN(fork)) {
     fork = 0;
     messages.push({ warning: 'Fork was not provided, defaulted to 0' });
   }
 
-  if (fork > 0 && configuration.blockDbVersion == 'v1') {
-    res.status(400).send('Invalid fork for this archive database version');
+  // Validate fork value
+  if (fork < 0 || fork > 2) {
+    res.status(400).send('Invalid fork value. Supported forks: 0, 1, 2');
+    return;
+  }
+
+  // Validate fork activation
+  if (fork === 1 && configuration.fork1StartSlot === 0) {
+    res.status(400).send('Fork 1 not activated (FORK_1_START_SLOT not configured)');
+    return;
+  }
+  if (fork === 2 && configuration.fork2StartSlot === 0) {
+    res.status(400).send('Fork 2 not activated (FORK_2_START_SLOT not configured)');
     return;
   }
 

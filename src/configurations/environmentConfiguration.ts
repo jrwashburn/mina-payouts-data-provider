@@ -21,7 +21,9 @@ function loadConfiguration(): Configuration {
     blockDbQueryHost: String(process.env.BLOCK_DB_QUERY_HOST),
     blockDbQueryPort: Number(process.env.BLOCK_DB_QUERY_PORT),
     blockDbQueryName: String(process.env.BLOCK_DB_QUERY_NAME),
-    blockDbVersion: String(process.env.BLOCK_DB_VERSION),
+
+    fork1StartSlot: Number(process.env.FORK_1_START_SLOT),
+    fork2StartSlot: Number(process.env.FORK_2_START_SLOT) || 0,
 
     ledgerDbQueryConnectionSSL: process.env.LEDGER_DB_QUERY_REQUIRE_SSL === 'true',
     ledgerDbQueryCertificate: String(process.env.LEDGER_DB_QUERY_CERTIFICATE),
@@ -69,7 +71,8 @@ function ensureEnvVarsPresent() {
     'BLOCK_DB_QUERY_HOST',
     'BLOCK_DB_QUERY_PORT',
     'BLOCK_DB_QUERY_NAME',
-    'BLOCK_DB_VERSION',
+
+    'FORK_1_START_SLOT',
 
     'LEDGER_DB_QUERY_REQUIRE_SSL',
     'LEDGER_DB_QUERY_USER',
@@ -99,8 +102,21 @@ function ensureEnvVarsPresent() {
 }
 
 function validateEnvVars(configuration: Configuration): void {
-  if (configuration.blockDbVersion != 'v1' && configuration.blockDbVersion != 'v2') {
-    const message = `Environment variable BLOCK_DB_VERSION is expected to be "v1" or "v2"`;
+  // Validate fork configuration
+  if (isNaN(configuration.fork1StartSlot) || configuration.fork1StartSlot <= 0) {
+    const message = `Environment variable FORK_1_START_SLOT must be a positive number (Berkeley fork activation slot)`;
+    console.log(message);
+    throw Error(message);
+  }
+
+  if (configuration.fork2StartSlot < 0) {
+    const message = `Environment variable FORK_2_START_SLOT must be >= 0 (0 means Mesa fork not activated yet)`;
+    console.log(message);
+    throw Error(message);
+  }
+
+  if (configuration.fork2StartSlot > 0 && configuration.fork2StartSlot <= configuration.fork1StartSlot) {
+    const message = `Environment variable FORK_2_START_SLOT (${configuration.fork2StartSlot}) must be greater than FORK_1_START_SLOT (${configuration.fork1StartSlot})`;
     console.log(message);
     throw Error(message);
   }
