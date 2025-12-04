@@ -4,7 +4,7 @@ This directory contains comprehensive integration tests for all API endpoints of
 
 ## Overview
 
-The test suite uses **Jest** with **TypeScript** and **Supertest** for HTTP endpoint testing. Tests verify:
+The test suite uses **Vitest** with **TypeScript** and **Supertest** for HTTP endpoint testing. Tests verify:
 
 - ✅ Endpoint existence and HTTP status codes
 - ✅ Response structure and data types
