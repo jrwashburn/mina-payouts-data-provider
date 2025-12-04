@@ -7,6 +7,19 @@ import { logger } from '../index.js';
 
 const { ApolloClient, InMemoryCache, HttpLink, gql } = apolloCore;
 
+interface BestChainQuery {
+  bestChain: Array<{
+    protocolState: {
+      consensusState: {
+        blockHeight: string;
+        epoch: number;
+        slot: number;
+        slotSinceGenesis: number;
+      };
+    };
+  }>;
+}
+
 const query = gql`
   query MyQuery {
     bestChain(maxLength: 1) {
@@ -27,7 +40,10 @@ async function getBlockHeightFromNode(node: string): Promise<number> {
     link: new HttpLink({ uri: node, fetch }),
     cache: new InMemoryCache(),
   });
-  const { data } = await client.query({ query });
+  const { data } = await client.query<BestChainQuery>({ query });
+  if (!data) {
+    throw new Error('No data returned from GraphQL query');
+  }
   return Number(data.bestChain[0].protocolState.consensusState.blockHeight);
 }
 
