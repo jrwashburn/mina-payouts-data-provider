@@ -1,7 +1,6 @@
 import request from 'supertest';
 import { Application } from 'express';
 import { createTestServer } from '../utils/testServer.js';
-import { fixtures } from '../utils/mockDatabase.js';
 
 describe('Consensus Endpoint', () => {
   let app: Application;
