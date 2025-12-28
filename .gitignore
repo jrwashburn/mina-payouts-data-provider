@@ -3,6 +3,8 @@
 .vscode/
 node_modules/
 .env*
+# Allow test env files for consistent test runs
+!tests/.env*
 package-lock.json
 dist/
 deploy/deployment*.yaml
