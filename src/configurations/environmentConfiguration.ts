@@ -3,6 +3,26 @@ import { Configuration } from '../models/configuration.js';
 
 const configuration: Configuration = loadConfiguration();
 
+/**
+ * Dynamically loads fork start slots from environment variables.
+ * Scans for FORK_[x]_START_SLOT variables and builds the array.
+ * Fork 0 is always 0 (genesis), Fork 1 is required, higher forks are optional.
+ * @returns Array of fork start slots [0, fork1, fork2, fork3, ...]
+ */
+function loadForkStartSlots(): number[] {
+  const forkStartSlots: number[] = [0]; // Fork 0: Genesis (always starts at slot 0)
+
+  // Dynamically discover higher forks (FORK_1, FORK_2, FORK_3, FORK_4, etc.)
+  let forkIndex = 1;
+  while (process.env[`FORK_${forkIndex}_START_SLOT`] !== undefined) {
+    const forkValue = Number(process.env[`FORK_${forkIndex}_START_SLOT`]);
+    forkStartSlots.push(forkValue || 0); // 0 = not activated
+    forkIndex++;
+  }
+
+  return forkStartSlots;
+}
+
 function loadConfiguration(): Configuration {
   config();
   ensureEnvVarsPresent();
@@ -22,11 +42,7 @@ function loadConfiguration(): Configuration {
     blockDbQueryPort: Number(process.env.BLOCK_DB_QUERY_PORT),
     blockDbQueryName: String(process.env.BLOCK_DB_QUERY_NAME),
 
-    forkStartSlots: [
-      0, // Fork 0: Genesis (always starts at slot 0)
-      Number(process.env.FORK_1_START_SLOT), // Fork 1: Berkeley
-      Number(process.env.FORK_2_START_SLOT) || 0, // Fork 2: Mesa (0 = not activated)
-    ],
+    forkStartSlots: loadForkStartSlots(),
 
     ledgerDbQueryConnectionSSL: process.env.LEDGER_DB_QUERY_REQUIRE_SSL === 'true',
     ledgerDbQueryCertificate: String(process.env.LEDGER_DB_QUERY_CERTIFICATE),
@@ -105,23 +121,31 @@ function ensureEnvVarsPresent() {
 }
 
 function validateEnvVars(configuration: Configuration): void {
-  // Validate fork configuration
-  if (isNaN(configuration.forkStartSlots[1]) || configuration.forkStartSlots[1] <= 0) {
-    const message = `Environment variable FORK_1_START_SLOT must be a positive number (Berkeley fork activation slot)`;
-    console.log(message);
-    throw Error(message);
-  }
+  // Validate fork configuration (fork 1 and higher)
+  for (let i = 1; i < configuration.forkStartSlots.length; i++) {
+    const currentForkSlot = configuration.forkStartSlots[i];
+    const previousForkSlot = configuration.forkStartSlots[i - 1];
 
-  if (configuration.forkStartSlots[2] < 0) {
-    const message = `Environment variable FORK_2_START_SLOT must be >= 0 (0 means Mesa fork not activated yet)`;
-    console.log(message);
-    throw Error(message);
-  }
+    // Fork 1 must be positive (required, marks Berkeley fork)
+    if (i === 1 && (isNaN(currentForkSlot) || currentForkSlot <= 0)) {
+      const message = `Environment variable FORK_1_START_SLOT must be a positive number (Berkeley fork activation slot)`;
+      console.log(message);
+      throw Error(message);
+    }
 
-  if (configuration.forkStartSlots[2] > 0 && configuration.forkStartSlots[2] <= configuration.forkStartSlots[1]) {
-    const message = `Environment variable FORK_2_START_SLOT (${configuration.forkStartSlots[2]}) must be greater than FORK_1_START_SLOT (${configuration.forkStartSlots[1]})`;
-    console.log(message);
-    throw Error(message);
+    // Fork 2+ must be >= 0 (0 = not activated)
+    if (i > 1 && currentForkSlot < 0) {
+      const message = `Environment variable FORK_${i}_START_SLOT must be >= 0 (0 means fork not activated yet)`;
+      console.log(message);
+      throw Error(message);
+    }
+
+    // Each activated fork must have a slot greater than the previous fork
+    if (currentForkSlot > 0 && currentForkSlot <= previousForkSlot) {
+      const message = `Environment variable FORK_${i}_START_SLOT (${currentForkSlot}) must be greater than FORK_${i - 1}_START_SLOT (${previousForkSlot})`;
+      console.log(message);
+      throw Error(message);
+    }
   }
 
   if (
