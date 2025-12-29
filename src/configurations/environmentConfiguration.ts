@@ -22,8 +22,11 @@ function loadConfiguration(): Configuration {
     blockDbQueryPort: Number(process.env.BLOCK_DB_QUERY_PORT),
     blockDbQueryName: String(process.env.BLOCK_DB_QUERY_NAME),
 
-    fork1StartSlot: Number(process.env.FORK_1_START_SLOT),
-    fork2StartSlot: Number(process.env.FORK_2_START_SLOT) || 0,
+    forkStartSlots: [
+      0, // Fork 0: Genesis (always starts at slot 0)
+      Number(process.env.FORK_1_START_SLOT), // Fork 1: Berkeley
+      Number(process.env.FORK_2_START_SLOT) || 0, // Fork 2: Mesa (0 = not activated)
+    ],
 
     ledgerDbQueryConnectionSSL: process.env.LEDGER_DB_QUERY_REQUIRE_SSL === 'true',
     ledgerDbQueryCertificate: String(process.env.LEDGER_DB_QUERY_CERTIFICATE),
@@ -103,20 +106,20 @@ function ensureEnvVarsPresent() {
 
 function validateEnvVars(configuration: Configuration): void {
   // Validate fork configuration
-  if (isNaN(configuration.fork1StartSlot) || configuration.fork1StartSlot <= 0) {
+  if (isNaN(configuration.forkStartSlots[1]) || configuration.forkStartSlots[1] <= 0) {
     const message = `Environment variable FORK_1_START_SLOT must be a positive number (Berkeley fork activation slot)`;
     console.log(message);
     throw Error(message);
   }
 
-  if (configuration.fork2StartSlot < 0) {
+  if (configuration.forkStartSlots[2] < 0) {
     const message = `Environment variable FORK_2_START_SLOT must be >= 0 (0 means Mesa fork not activated yet)`;
     console.log(message);
     throw Error(message);
   }
 
-  if (configuration.fork2StartSlot > 0 && configuration.fork2StartSlot <= configuration.fork1StartSlot) {
-    const message = `Environment variable FORK_2_START_SLOT (${configuration.fork2StartSlot}) must be greater than FORK_1_START_SLOT (${configuration.fork1StartSlot})`;
+  if (configuration.forkStartSlots[2] > 0 && configuration.forkStartSlots[2] <= configuration.forkStartSlots[1]) {
+    const message = `Environment variable FORK_2_START_SLOT (${configuration.forkStartSlots[2]}) must be greater than FORK_1_START_SLOT (${configuration.forkStartSlots[1]})`;
     console.log(message);
     throw Error(message);
   }

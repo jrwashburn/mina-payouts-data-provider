@@ -157,7 +157,7 @@ FROM blocks
 WHERE height in (SELECT MAX(height) FROM blocks)
 LIMIT 1;`
 
-const getMinMaxBlocksInSlotRangeQueryFork0 = `
+export const getMinMaxBlocksInSlotRangeQuery = `
 SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
 FROM
 blocks b
@@ -180,72 +180,7 @@ WHERE
   )
 AND b.global_slot_since_genesis >= CAST($1 AS INTEGER)
 AND b.global_slot_since_genesis <= CAST($2 AS INTEGER)
-AND (
-  -- If fork 1 is configured, fork 0 ends before it; otherwise fork 0 is everything
-  CAST($3 AS INTEGER) = 0
-  OR b.global_slot_since_genesis < CAST($3 AS INTEGER)
-)`;
-
-const getMinMaxBlocksInSlotRangeQueryFork1 = `
-SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
-FROM
-blocks b
-WHERE
-  EXISTS (
-    WITH RECURSIVE chain AS (
-      SELECT id, b.parent_id
-      FROM blocks b
-      WHERE b.height = ( select MAX(height) from blocks )
-      UNION ALL
-      SELECT b.id, b.parent_id
-      FROM blocks b
-      INNER JOIN chain ON b.id = chain.parent_id
-    )
-    SELECT
-      1
-    FROM
-      chain c
-    WHERE c.id = b.id
-  )
-AND b.global_slot_since_hard_fork >= CAST($1 AS INTEGER)
-AND b.global_slot_since_hard_fork <= CAST($2 AS INTEGER)
-AND b.global_slot_since_genesis >= CAST($3 AS INTEGER)
-AND (
-  CAST($4 AS INTEGER) = 0
-  OR b.global_slot_since_genesis < CAST($4 AS INTEGER)
-)`;
-
-const getMinMaxBlocksInSlotRangeQueryFork2 = `
-SELECT min(height) as epochminblockheight, max(height) as epochmaxblockheight
-FROM
-blocks b
-WHERE
-  EXISTS (
-    WITH RECURSIVE chain AS (
-      SELECT id, b.parent_id
-      FROM blocks b
-      WHERE b.height = ( select MAX(height) from blocks )
-      UNION ALL
-      SELECT b.id, b.parent_id
-      FROM blocks b
-      INNER JOIN chain ON b.id = chain.parent_id
-    )
-    SELECT
-      1
-    FROM
-      chain c
-    WHERE c.id = b.id
-  )
-AND b.global_slot_since_hard_fork >= CAST($1 AS INTEGER)
-AND b.global_slot_since_hard_fork <= CAST($2 AS INTEGER)
-AND b.global_slot_since_genesis >= CAST($3 AS INTEGER)`;
-
-export const getMinMaxBlocksInSlotRangeQuery = (fork: number): string => {
-  if (fork === 0) return getMinMaxBlocksInSlotRangeQueryFork0;
-  if (fork === 1) return getMinMaxBlocksInSlotRangeQueryFork1;
-  if (fork === 2) return getMinMaxBlocksInSlotRangeQueryFork2;
-  throw new Error(`Invalid fork: ${fork}`);
-}
+`;
 
 export const getEpochQuery = `
 SELECT MIN(b.global_slot_since_hard_fork), MAX(b.global_slot_since_hard_fork)

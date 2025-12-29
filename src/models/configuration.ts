@@ -14,8 +14,7 @@ export interface Configuration {
   blockDbQueryPort: number,
   blockDbQueryName: string,
 
-  fork1StartSlot: number, // Global slot where Berkeley fork activated
-  fork2StartSlot: number, // Global slot where Mesa fork activates (0 = not activated yet)
+  forkStartSlots: number[], // Global slots where each fork activated [0=genesis, 1=Berkeley, 2=Mesa, ...]
 
   ledgerDbQueryConnectionSSL: boolean,
   ledgerDbQueryCertificate: string,

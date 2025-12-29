@@ -1,8 +1,7 @@
 import { Pool } from 'pg';
 import { Block, BlockSummary, Height } from '../models/blocks.js';
 import { createBlockQueryPool } from './databaseFactory.js'
-import { getLastestBlockQuery, getMinMaxBlocksInSlotRangeQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getPoolCreatorIdQuery } from './blockQueryFactory.js';
-import configuration from '../configurations/environmentConfiguration.js';
+import { getLastestBlockQuery, getHeightMissingQuery, getNullParentsQuery, getEpochQuery, getBlocksQuery, getMinMaxBlocksInSlotRangeQuery, getPoolCreatorIdQuery } from './blockQueryFactory.js';
 
 let pool: Pool | null = null;
 
@@ -19,23 +18,8 @@ export async function getLatestBlock(): Promise<BlockSummary> {
   return blockSummary;
 }
 
-export async function getMinMaxBlocksInSlotRange(min: number, max: number, fork: number): Promise<[number, number]> {
-  let params: (number)[];
-
-  if (fork === 0) {
-    // Fork 0: pass minSlot, maxSlot, fork1StartSlot
-    params = [min, max, configuration.fork1StartSlot];
-  } else if (fork === 1) {
-    // Fork 1: pass minSlot, maxSlot, fork1StartSlot, fork2StartSlot
-    params = [min, max, configuration.fork1StartSlot, configuration.fork2StartSlot];
-  } else if (fork === 2) {
-    // Fork 2: pass minSlot, maxSlot, fork2StartSlot
-    params = [min, max, configuration.fork2StartSlot];
-  } else {
-    throw new Error(`Invalid fork: ${fork}`);
-  }
-
-  const result = await getPool().query(getMinMaxBlocksInSlotRangeQuery(fork), params);
+export async function getMinMaxBlocksInSlotRange(min: number, max: number): Promise<[number, number]> {
+  const result = await getPool().query(getMinMaxBlocksInSlotRangeQuery, [min, max]);
   const row = result.rows[0] as unknown as { epochminblockheight: number; epochmaxblockheight: number };
   return [row.epochminblockheight, row.epochmaxblockheight];
 }
@@ -83,9 +67,23 @@ export async function getEpoch(hash: string, userSpecifiedEpoch: number | null):
   if (!process.env.NUM_SLOTS_IN_EPOCH) throw Error('ERROR: NUM_SLOTS_IN_EPOCH not present in .env file. ');
   const result = await getPool().query(getEpochQuery, [hash]);
 
-  if (result.rows.length > 0 && 'min' in result.rows[0] && 'max' in result.rows[0]) {
-    const minGlobalSlot = Number.parseFloat(String(result.rows[0].min));
-    const maxGlobalSlot = Number.parseFloat(String(result.rows[0].max));
+  if (result.rows.length > 0) {
+    const min = result.rows[0].min;
+    const max = result.rows[0].max;
+
+    // Check if values are null or undefined
+    if (min == null || max == null) {
+      return -1;
+    }
+
+    const minGlobalSlot = Number.parseFloat(String(min));
+    const maxGlobalSlot = Number.parseFloat(String(max));
+
+    // Verify parsed values are valid numbers
+    if (Number.isNaN(minGlobalSlot) || Number.isNaN(maxGlobalSlot)) {
+      return -1;
+    }
+
     const slotsInEpoch = Number.parseInt(process.env.NUM_SLOTS_IN_EPOCH);
 
     const epoch = Math.floor(minGlobalSlot / slotsInEpoch);
