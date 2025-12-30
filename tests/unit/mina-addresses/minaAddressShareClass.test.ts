@@ -21,9 +21,9 @@ describe('Share Class Determination (P1-12)', () => {
     const foundationAddress = 'B62qFoundation123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Mina_Foundation')) {
-        return `Address\n${foundationAddress}\nB62qFoundation456`;
+        return `${foundationAddress}\nB62qFoundation456`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -41,9 +41,9 @@ describe('Share Class Determination (P1-12)', () => {
     const o1Address = 'B62qO1Labs123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('O1_Labs')) {
-        return `Address\n${o1Address}\nB62qO1Labs456`;
+        return `${o1Address}\nB62qO1Labs456`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -61,9 +61,9 @@ describe('Share Class Determination (P1-12)', () => {
     const investorAddress = 'B62qInvestor123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Investors')) {
-        return `Address\n${investorAddress}\nB62qInvestor456`;
+        return `${investorAddress}\nB62qInvestor456`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -79,7 +79,7 @@ describe('Share Class Determination (P1-12)', () => {
   it('should return Common/"" for address not in any CSV', async () => {
     // Arrange
     const commonAddress = 'B62qCommon123';
-    vi.mocked(fs.readFile).mockResolvedValue('Address\nB62qOtherAddress\n');
+    vi.mocked(fs.readFile).mockResolvedValue('B62qOtherAddress\n');
 
     const minaAddresses = await MinaAddresses.create('test-path');
 
@@ -96,9 +96,9 @@ describe('Share Class Determination (P1-12)', () => {
     const address = 'B62qDuplicate123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Mina_Foundation') || filePath.includes('O1_Labs')) {
-        return `Address\n${address}`;
+        return `${address}`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -140,9 +140,9 @@ describe('Share Class Determination (P1-12)', () => {
     const address = 'B62qTest123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Mina_Foundation')) {
-        return `Address\n${address}  \n`; // Trailing whitespace
+        return `${address}  \n`; // Trailing whitespace
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -151,7 +151,7 @@ describe('Share Class Determination (P1-12)', () => {
     const result = await minaAddresses.getPublicKeyShareClass(address);
 
     // Assert
-    // String.includes() should still match despite whitespace
+    // Whitespace is trimmed during parsing, so exact match should work
     expect(result.shareClass).toBe('NPS');
     expect(result.shareOwner).toBe('MF');
   });
@@ -162,9 +162,9 @@ describe('Share Class Determination (P1-12)', () => {
     const lowerCaseAddress = 'b62qtest123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Mina_Foundation')) {
-        return `Address\n${address}`;
+        return `${address}`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -178,15 +178,15 @@ describe('Share Class Determination (P1-12)', () => {
     expect(result.shareOwner).toBe('');
   });
 
-  it('should handle partial address matches correctly', async () => {
+  it('should not match partial addresses', async () => {
     // Arrange: One address is substring of another
     const fullAddress = 'B62qTest12345';
     const partialAddress = 'B62qTest123';
     vi.mocked(fs.readFile).mockImplementation(async (filePath: any) => {
       if (filePath.includes('Mina_Foundation')) {
-        return `Address\n${fullAddress}`;
+        return `${fullAddress}`;
       }
-      return 'Address\n';
+      return '';
     });
 
     const minaAddresses = await MinaAddresses.create('test-path');
@@ -195,9 +195,8 @@ describe('Share Class Determination (P1-12)', () => {
     const result = await minaAddresses.getPublicKeyShareClass(partialAddress);
 
     // Assert
-    // String.includes() will match substrings, so this will match
-    // This is a potential bug in the implementation, but testing actual behavior
-    expect(result.shareClass).toBe('NPS');
-    expect(result.shareOwner).toBe('MF');
+    // Exact matching should NOT match partial addresses
+    expect(result.shareClass).toBe('Common');
+    expect(result.shareOwner).toBe('');
   });
 });
