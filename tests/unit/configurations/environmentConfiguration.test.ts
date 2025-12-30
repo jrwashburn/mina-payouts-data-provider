@@ -103,7 +103,7 @@ describe('Configuration Loading & Fork Validation (P0-7)', () => {
       const config = await import('../../../src/configurations/environmentConfiguration.js');
 
       // Assert
-      expect(config.default.fork2StartSlot).toBe(0);
+      expect(config.default.forkStartSlots[2]).toBe(0);
     });
 
     it('should reject when FORK_2_START_SLOT is negative', async () => {
@@ -136,8 +136,8 @@ describe('Configuration Loading & Fork Validation (P0-7)', () => {
       const config = await import('../../../src/configurations/environmentConfiguration.js');
 
       // Assert
-      expect(config.default.fork1StartSlot).toBe(564480);
-      expect(config.default.fork2StartSlot).toBe(564481);
+      expect(config.default.forkStartSlots[1]).toBe(564480);
+      expect(config.default.forkStartSlots[2]).toBe(564481);
     });
 
     it('should allow valid FORK_2_START_SLOT > FORK_1_START_SLOT', async () => {
@@ -149,8 +149,8 @@ describe('Configuration Loading & Fork Validation (P0-7)', () => {
       const config = await import('../../../src/configurations/environmentConfiguration.js');
 
       // Assert
-      expect(config.default.fork1StartSlot).toBe(564480);
-      expect(config.default.fork2StartSlot).toBe(1000000);
+      expect(config.default.forkStartSlots[1]).toBe(564480);
+      expect(config.default.forkStartSlots[2]).toBe(1000000);
     });
   });
 
@@ -325,7 +325,7 @@ describe('Configuration Loading & Fork Validation (P0-7)', () => {
       const config = await import('../../../src/configurations/environmentConfiguration.js');
 
       // Assert
-      expect(config.default.fork2StartSlot).toBe(0);
+      expect(config.default.forkStartSlots[2]).toBeUndefined();
     });
 
     it('should accept LOG_LEVEL = "info" when provided', async () => {
