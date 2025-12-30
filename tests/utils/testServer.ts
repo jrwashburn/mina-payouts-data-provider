@@ -7,6 +7,7 @@ import * as blocksRoute from '../../src/routes/blocks.js';
 import * as epochRoute from '../../src/routes/epoch.js';
 import * as healthRoute from '../../src/routes/health.js';
 import * as stakingLedgersRoute from '../../src/routes/stakingLedgers.js';
+import { checkTrustArchiveDatabaseHeight } from '../../src/middlewares/checkTrustArchiveDatabaseHeight.js';
 
 /**
  * Creates a test Express application with all routes and middleware configured
@@ -33,19 +34,13 @@ export function createTestServer(): Application {
     next();
   });
 
-  // Mock the middleware that checks archive database height
-  // For tests, we'll just pass through
-  app.use((req, _res, next) => {
-    // @ts-ignore - adding mock state
-    req.trustArchiveDatabaseHeight = true;
-    next();
-  });
+  // Use real middleware for archive database height trust
 
   // Routes
   app.use('/health', healthRoute.default);
-  app.use('/consensus', consensusRoute.default);
-  app.use('/blocks', blocksRoute.default);
-  app.use('/epoch', epochRoute.default);
+  app.use('/consensus', checkTrustArchiveDatabaseHeight, consensusRoute.default);
+  app.use('/blocks', checkTrustArchiveDatabaseHeight, blocksRoute.default);
+  app.use('/epoch', checkTrustArchiveDatabaseHeight, epochRoute.default);
   app.use('/staking-ledgers', stakingLedgersRoute.default);
 
   return app;
