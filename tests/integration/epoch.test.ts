@@ -128,7 +128,7 @@ describe('Epoch Endpoint', () => {
       const response = await request(app).get('/epoch/1').query({ fork: 3 });
 
       expect(response.status).toBe(400);
-      expect(response.text).toContain('Invalid fork value');
+      expect(response.text).toContain('Fork 3 not supported');
     });
 
     it('should reject negative fork parameter', async () => {
