@@ -116,7 +116,18 @@ describe('Configuration Loading & Fork Validation (P0-7)', () => {
       }).rejects.toThrow(/FORK_2_START_SLOT must be >= 0/);
     });
 
-    it('should reject when FORK_2_START_SLOT ≤ FORK_1_START_SLOT', async () => {
+    it('should reject when FORK_2_START_SLOT < FORK_1_START_SLOT', async () => {
+      // Arrange
+      process.env.FORK_1_START_SLOT = '564480';
+      process.env.FORK_2_START_SLOT = '500000'; // Less than Fork 1
+
+      // Act & Assert
+      await expect(async () => {
+        await import('../../../src/configurations/environmentConfiguration.js');
+      }).rejects.toThrow(/FORK_2_START_SLOT.*must be greater than FORK_1_START_SLOT/);
+    });
+
+    it('should reject when FORK_2_START_SLOT = FORK_1_START_SLOT', async () => {
       // Arrange
       process.env.FORK_1_START_SLOT = '564480';
       process.env.FORK_2_START_SLOT = '564480'; // Same as Fork 1
