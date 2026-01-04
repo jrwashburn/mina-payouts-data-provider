@@ -4,10 +4,18 @@ import { MinaAddresses } from '../mina-addresses/minaAddressShareClass.js'
 import { ControllerResponse } from '../models/controller.js';
 import { Decimal } from 'decimal.js';
 
-let minaAddresses: MinaAddresses;
-(async () => {
-  minaAddresses = await MinaAddresses.create('src/mina-addresses');
-})();
+let minaAddresses: MinaAddresses | null = null;
+const minaAddressesPromise = MinaAddresses.create('src/mina-addresses').then(instance => {
+  minaAddresses = instance;
+  return instance;
+});
+
+async function getMinaAddresses(): Promise<MinaAddresses> {
+  if (minaAddresses) {
+    return minaAddresses;
+  }
+  return await minaAddressesPromise;
+}
 
 export async function getLedgerFromHashForKey(ledgerHash: string, key: string): Promise<ControllerResponse> {
   const ledger: Ledger = await getStakes(ledgerHash, key);
@@ -24,6 +32,7 @@ export async function getLedgerFromEpochForKey(key: string, epoch: number): Prom
 async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
   let totalStakingBalance = new Decimal(0.0);
   const ledger = await getStakingLedgers(ledgerHash, key);
+  const addresses = await getMinaAddresses();
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {
@@ -33,7 +42,7 @@ async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
         publicKey: stake.pk,
         stakingBalance: balance,
         untimedAfterSlot: await calculateUntimedSlot(stake),
-        shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
+        shareClass: await addresses.getPublicKeyShareClass(stake.pk),
       };
     })
   );
@@ -46,6 +55,7 @@ async function getStakes(ledgerHash: string, key: string): Promise<Ledger> {
 async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
   let totalStakingBalance = new Decimal(0.0);
   const ledger = await getStakingLedgersByEpoch(key, epoch);
+  const addresses = await getMinaAddresses();
 
   const stakers: Stake[] = await Promise.all(
     ledger.map(async (stake: LedgerEntry) => {
@@ -55,7 +65,7 @@ async function getStakesByEpoch(key: string, epoch: number): Promise<Ledger> {
         publicKey: stake.pk,
         stakingBalance: balance,
         untimedAfterSlot: await calculateUntimedSlot(stake),
-        shareClass: await minaAddresses.getPublicKeyShareClass(stake.pk),
+        shareClass: await addresses.getPublicKeyShareClass(stake.pk),
       };
     })
   );

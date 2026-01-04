@@ -14,20 +14,33 @@ router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): P
     return;
   }
 
-  let { fork } = req.query as unknown as { fork: number };
+  let fork = Number(req.query.fork);
   if (isNaN(fork)) {
     fork = 0;
     messages.push({ warning: 'Fork was not provided, defaulted to 0' });
   }
 
-  if (fork > 0 && configuration.blockDbVersion == 'v1') {
-    res.status(400).send('Invalid fork for this archive database version');
+  // Validate fork value
+  if (fork < 0) {
+    res.status(400).send('Invalid fork value. Fork must be >= 0');
+    return;
+  }
+
+  // Validate fork activation
+  if (fork >= configuration.forkStartSlots.length) {
+    res.status(400).send(`Fork ${fork} not supported (only ${configuration.forkStartSlots.length - 1} forks configured)`);
+    return;
+  }
+  
+  // For forks > 0, check if they are activated (start slot > 0)
+  if (fork > 0 && configuration.forkStartSlots[fork] === 0) {
+    res.status(400).send(`Fork ${fork} not activated (FORK_${fork}_START_SLOT not configured)`);
     return;
   }
 
   try {
-    const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch);
-    const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot, fork);
+    const [minSlot, maxSlot] = getMinMaxSlotHeight(epoch, fork);
+    const [epochMinBlockHeight, epochMaxBlockHeight] = await db.getMinMaxBlocksInSlotRange(minSlot, maxSlot);
     const blockSummary: BlockSummary = await db.getLatestBlock();
     if (blockSummary.blockheight - epochMaxBlockHeight < 20) {
       messages.push({ warning: 'Epoch is in progress' });
@@ -52,10 +65,11 @@ router.get('/:epoch/', async (req: Request<{ epoch: string }>, res: Response): P
   }
 });
 
-function getMinMaxSlotHeight(epoch: number): [number, number] {
+function getMinMaxSlotHeight(epoch: number, fork: number): [number, number] {
   const slotsInEpoch = configuration.slotsPerEpoch;
-  const min = slotsInEpoch * epoch;
-  const max = slotsInEpoch * (epoch + 1) - 1;
+  const forkOffset = configuration.forkStartSlots[fork] || 0;
+  const min = forkOffset + (slotsInEpoch * epoch);
+  const max = forkOffset + (slotsInEpoch * (epoch + 1)) - 1;
   return [min, max];
 }
 
