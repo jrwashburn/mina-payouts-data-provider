@@ -1,7 +1,6 @@
 import XLSX from 'xlsx';
 import type { TaxEvent, KoinlyRow, LedgibleRow, AccointingRow } from '../models/taxExport.js';
 import { TAX_EXPORT_CONFIG } from '../configurations/taxConstants.js';
-import { eventLoopUtilization } from 'node:perf_hooks';
 
 /**
  * Format tax events based on requested format
