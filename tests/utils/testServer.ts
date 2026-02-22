@@ -7,6 +7,7 @@ import * as blocksRoute from '../../src/routes/blocks.js';
 import * as epochRoute from '../../src/routes/epoch.js';
 import * as healthRoute from '../../src/routes/health.js';
 import * as stakingLedgersRoute from '../../src/routes/stakingLedgers.js';
+import * as taxExportRoute from '../../src/routes/taxExport.js';
 import { checkTrustArchiveDatabaseHeight } from '../../src/middlewares/checkTrustArchiveDatabaseHeight.js';
 
 /**
@@ -42,6 +43,7 @@ export function createTestServer(): Application {
   app.use('/blocks', checkTrustArchiveDatabaseHeight, blocksRoute.default);
   app.use('/epoch', checkTrustArchiveDatabaseHeight, epochRoute.default);
   app.use('/staking-ledgers', stakingLedgersRoute.default);
+  app.use('/tax-export', taxExportRoute.default);
 
   return app;
 }
