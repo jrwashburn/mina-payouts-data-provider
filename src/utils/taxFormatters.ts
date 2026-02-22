@@ -1,5 +1,5 @@
 import XLSX from 'xlsx';
-import type { TaxEvent, KoinlyRow, LedgibleRow, AccointingRow } from '../models/taxExport.js';
+import type { TaxEvent, KoinlyRow, LedgibleRow, BlockpitRow } from '../models/taxExport.js';
 import { TAX_EXPORT_CONFIG } from '../configurations/taxConstants.js';
 
 /**
@@ -15,8 +15,8 @@ export function formatTaxData(
       return formatAsKoinly(events, multipleAccounts);
     case 'ledgible':
       return formatAsLedgible(events, multipleAccounts);
-    case 'accointing':
-      return formatAsAccointing(events, multipleAccounts);
+    case 'blockpit':
+      return formatAsBlockpit(events, multipleAccounts);
     case 'json':
     default:
       return JSON.stringify(events, null, 2);
@@ -25,6 +25,10 @@ export function formatTaxData(
 
 /**
  * Format as Koinly CSV (12 or 13 columns)
+ *
+ * IMPORTANT: For withdrawals, Koinly requires the amount to include the fee.
+ * Per Koinly documentation: "A withdrawal cannot have a separate fee field -
+ * if you paid a fee then the withdrawn amount should include the fee as well."
  */
 function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
   const rows: KoinlyRow[] = events.map((event) => {
@@ -33,9 +37,14 @@ function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
       event.eventType === 'coinbase_reward' ||
       event.eventType === 'snark_fee';
 
+    // For withdrawals, add fee to amount (Koinly requirement)
+    const amountForKoinly = isDeposit
+      ? event.amount
+      : event.amount.plus(event.fee);
+
     const row: KoinlyRow = {
       koinlyDate: event.timestamp.toISOString(),
-      amount: event.amount.toString(),
+      amount: amountForKoinly.toString(),
       currency: TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
       label: getKoinlyLabel(event),
       txHash: event.transactionHash,
@@ -45,7 +54,7 @@ function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
       type: getKoinlyType(event),
       sendingWallet: isDeposit ? '' : event.from || '',
       receivingWallet: isDeposit ? event.to || '' : '',
-      fee: isDeposit ? '' : event.fee.toString(),
+      fee: '', // Koinly doesn't use separate fee field for withdrawals
     };
 
     if (multipleAccounts) {
@@ -55,7 +64,7 @@ function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
     return row;
   });
 
-  return formatCsv(rows as unknown as Array<Record<string, unknown>>, getKoinlyHeaders(multipleAccounts));
+  return formatKoinlyCsv(rows, getKoinlyHeaders(multipleAccounts));
 }
 
 /**
@@ -86,17 +95,17 @@ function formatAsLedgible(events: TaxEvent[], multipleAccounts: boolean): string
     return row;
   });
 
-  return formatCsv(rows as unknown as Array<Record<string, unknown>>, getLedgibleHeaders(multipleAccounts));
+  return formatLedgibleCsv(rows, getLedgibleHeaders(multipleAccounts));
 }
 
 /**
- * Format as Accointing XLSX (8 or 9 columns)
+ * Format as Blockpit (formerly Accointing) XLSX (8 or 9 columns)
  */
-function formatAsAccointing(events: TaxEvent[], multipleAccounts: boolean): Buffer {
-  const rows: AccointingRow[] = events.map((event) => {
-    const row: AccointingRow = {
+function formatAsBlockpit(events: TaxEvent[], multipleAccounts: boolean): Buffer {
+  const rows: BlockpitRow[] = events.map((event) => {
+    const row: BlockpitRow = {
       timestamp: event.timestamp.toISOString().replace('T', ' ').replace('Z', ''),
-      type: getAccointingType(event),
+      type: getBlockpitType(event),
       baseCurrency: TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
       baseAmount: event.amount.toString(),
       quoteCurrency: '',
@@ -114,7 +123,7 @@ function formatAsAccointing(events: TaxEvent[], multipleAccounts: boolean): Buff
 
   // Create XLSX workbook
   const worksheet = XLSX.utils.json_to_sheet(rows, {
-    header: getAccointingHeaders(multipleAccounts),
+    header: getBlockpitHeaders(multipleAccounts),
   });
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
@@ -222,9 +231,9 @@ function formatLedgibleDate(date: Date): string {
 }
 
 /**
- * Get Accointing transaction type
+ * Get Blockpit transaction type
  */
-function getAccointingType(event: TaxEvent): string {
+function getBlockpitType(event: TaxEvent): string {
   switch (event.eventType) {
     case 'coinbase_reward':
     case 'snark_fee':
@@ -294,9 +303,9 @@ function getLedgibleHeaders(multipleAccounts: boolean): string[] {
 }
 
 /**
- * Get Accointing headers
+ * Get Blockpit headers
  */
-function getAccointingHeaders(multipleAccounts: boolean): string[] {
+function getBlockpitHeaders(multipleAccounts: boolean): string[] {
   const headers = [
     'Timestamp (UTC)',
     'Type',
@@ -316,9 +325,9 @@ function getAccointingHeaders(multipleAccounts: boolean): string[] {
 }
 
 /**
- * Format objects as CSV
+ * Format Koinly rows as CSV
  */
-function formatCsv(rows: Record<string, unknown>[], headers: string[]): string {
+function formatKoinlyCsv(rows: KoinlyRow[], headers: string[]): string {
   if (rows.length === 0) {
     return headers.join(',') + '\n';
   }
@@ -328,44 +337,70 @@ function formatCsv(rows: Record<string, unknown>[], headers: string[]): string {
 
   // Map row objects to match header keys
   const mappedRows = rows.map((row) => {
-    const mappedRow: Record<string, unknown> = {};
-
-    // Handle Koinly format
-    if ('koinlyDate' in row) {
-      mappedRow.account = row.account || '';
-      mappedRow.koinly_date = row.koinlyDate;
-      mappedRow.amount = row.amount;
-      mappedRow.currency = row.currency;
-      mappedRow.label = row.label;
-      mappedRow.txhash = row.txHash;
-      mappedRow.net_worth_amount = row.netWorthAmount;
-      mappedRow.net_worth_currency = row.netWorthCurrency;
-      mappedRow.description = row.description;
-      mappedRow.type = row.type;
-      mappedRow.sendingwallet = row.sendingWallet;
-      mappedRow.receivingwallet = row.receivingWallet;
-      mappedRow.fee = row.fee;
-    }
-    // Handle Ledgible format
-    else if ('categorization' in row) {
-      mappedRow.account = row.account || '';
-      mappedRow.date = row.date;
-      mappedRow.timezone = row.timezone;
-      mappedRow.categorization = row.categorization;
-      mappedRow.side = row.side;
-      mappedRow.currency_symbol = row.currencySymbol;
-      mappedRow.quantity = row.quantity;
-      mappedRow.price_per_unit = row.pricePerUnit;
-      mappedRow.price_currency = row.priceCurrency;
-      mappedRow.fee = row.fee;
-      mappedRow.fee_currency = row.feeCurrency;
-      mappedRow.contract_address = row.contractAddress;
-    }
+    const mappedRow: Record<string, unknown> = {
+      account: row.account || '',
+      koinly_date: row.koinlyDate,
+      amount: row.amount,
+      currency: row.currency,
+      label: row.label,
+      txhash: row.txHash,
+      net_worth_amount: row.netWorthAmount,
+      net_worth_currency: row.netWorthCurrency,
+      description: row.description,
+      type: row.type,
+      sendingwallet: row.sendingWallet,
+      receivingwallet: row.receivingWallet,
+      fee: row.fee,
+    };
 
     return mappedRow;
   });
 
-  // Create CSV content
+  return buildCsv(mappedRows, headers, headerKeys);
+}
+
+/**
+ * Format Ledgible rows as CSV
+ */
+function formatLedgibleCsv(rows: LedgibleRow[], headers: string[]): string {
+  if (rows.length === 0) {
+    return headers.join(',') + '\n';
+  }
+
+  // Convert headers to lowercase, replace spaces with underscores for object keys
+  const headerKeys = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+
+  // Map row objects to match header keys
+  const mappedRows = rows.map((row) => {
+    const mappedRow: Record<string, unknown> = {
+      account: row.account || '',
+      date: row.date,
+      timezone: row.timezone,
+      categorization: row.categorization,
+      side: row.side,
+      currency_symbol: row.currencySymbol,
+      quantity: row.quantity,
+      price_per_unit: row.pricePerUnit,
+      price_currency: row.priceCurrency,
+      fee: row.fee,
+      fee_currency: row.feeCurrency,
+      contract_address: row.contractAddress,
+    };
+
+    return mappedRow;
+  });
+
+  return buildCsv(mappedRows, headers, headerKeys);
+}
+
+/**
+ * Build CSV content from mapped rows
+ */
+function buildCsv(
+  mappedRows: Array<Record<string, unknown>>,
+  headers: string[],
+  headerKeys: string[],
+): string {
   let csv = headers.join(',') + '\n';
 
   for (const row of mappedRows) {

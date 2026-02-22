@@ -157,19 +157,19 @@ describe('Tax Export Integration Tests', () => {
         }
       });
 
-      it('should return XLSX headers for accointing format', async () => {
+      it('should return XLSX headers for blockpit format', async () => {
         const response = await request(app)
           .get('/tax-export')
           .query({
             key: validKey,
             ...validDates,
-            format: 'accointing',
+            format: 'blockpit',
           });
 
         if (response.status === 200) {
           expect(response.header['content-type']).toContain('spreadsheetml');
           expect(response.header['content-disposition']).toContain('.xlsx');
-          expect(response.header['content-disposition']).toContain('accointing');
+          expect(response.header['content-disposition']).toContain('blockpit');
         }
       });
 
@@ -386,7 +386,7 @@ describe('Tax Export Integration Tests', () => {
       };
 
       it('should accept all valid formats', async () => {
-        const formats = ['koinly', 'ledgible', 'accointing', 'json'];
+        const formats = ['koinly', 'ledgible', 'blockpit', 'json'];
 
         for (const format of formats) {
           const response = await request(app)

@@ -41,7 +41,7 @@ function convertDateFormat(dateString: string): string {
  * - key (required): Single Mina public key
  * - startDate (required): YYYYMMDD
  * - endDate (required): YYYYMMDD
- * - format (optional): koinly | ledgible | accointing | json (default: json)
+ * - format (optional): koinly | ledgible | blockpit | json (default: json)
  * - payoutKeyword (optional): Single keyword for payout detection
  * - payoutAccount (optional): Single payout source account
  */
@@ -96,7 +96,7 @@ router.get('/', async (req: Request, res: Response) => {
  *   accounts: string[],
  *   startDate: string (YYYYMMDD),
  *   endDate: string (YYYYMMDD),
- *   format: 'koinly' | 'ledgible' | 'accointing' | 'json',
+ *   format: 'koinly' | 'ledgible' | 'blockpit' | 'json',
  *   payoutConfig?: {
  *     memoKeywords?: string[],
  *     payoutAccounts?: string[]
@@ -147,9 +147,9 @@ router.post('/', async (req: Request, res: Response) => {
  */
 async function executeExport(request: TaxExportRequest, res: Response) {
   // Validate format
-  if (!['koinly', 'ledgible', 'accointing', 'json'].includes(request.format)) {
+  if (!['koinly', 'ledgible', 'blockpit', 'json'].includes(request.format)) {
     return res.status(400).json({
-      error: 'format must be: koinly, ledgible, accointing, or json',
+      error: 'format must be: koinly, ledgible, blockpit, or json',
     });
   }
 
@@ -180,12 +180,12 @@ async function executeExport(request: TaxExportRequest, res: Response) {
       'Content-Disposition',
       `attachment; filename="${accountsLabel}-${request.format}.csv"`,
     );
-  } else if (request.format === 'accointing') {
+  } else if (request.format === 'blockpit') {
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
-    res.setHeader('Content-Disposition', `attachment; filename="${accountsLabel}-accointing.xlsx"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${accountsLabel}-blockpit.xlsx"`);
   } else {
     res.setHeader('Content-Type', 'application/json');
   }

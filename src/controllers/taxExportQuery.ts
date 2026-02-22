@@ -161,8 +161,8 @@ function validateRequest(request: TaxExportRequest): void {
   }
 
   // Validate format
-  if (!['koinly', 'ledgible', 'accointing', 'json'].includes(request.format)) {
-    throw new Error('Invalid format. Must be: koinly, ledgible, accointing, or json');
+  if (!['koinly', 'ledgible', 'blockpit', 'json'].includes(request.format)) {
+    throw new Error('Invalid format. Must be: koinly, ledgible, blockpit, or json');
   }
 }
 

@@ -4,7 +4,7 @@ export interface TaxExportRequest {
   accounts: string[];
   startDate: string;
   endDate: string;
-  format: 'koinly' | 'ledgible' | 'accointing' | 'json';
+  format: 'koinly' | 'ledgible' | 'blockpit' | 'json';
   payoutConfig?: PayoutConfig;
 }
 
@@ -134,7 +134,7 @@ export interface LedgibleRow {
   account?: string;
 }
 
-export interface AccointingRow {
+export interface BlockpitRow {
   timestamp: string;
   type: string;
   baseCurrency: string;

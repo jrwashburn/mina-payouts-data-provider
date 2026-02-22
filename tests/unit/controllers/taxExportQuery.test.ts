@@ -207,12 +207,12 @@ describe('taxExportQuery - Request Validation', () => {
       expect(result.responseCode).toBe(200);
     });
 
-    it('should accept accointing format', async () => {
+    it('should accept blockpit format', async () => {
       const request: TaxExportRequest = {
         accounts: [validAccount],
         startDate: '2024-01-01',
         endDate: '2024-01-31',
-        format: 'accointing',
+        format: 'blockpit',
       };
 
       const result = await getTaxExport(mockPool, request);

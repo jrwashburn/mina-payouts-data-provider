@@ -92,26 +92,36 @@ describe('taxFormatters', () => {
       expect(result).toContain('withdrawal');
     });
 
-    it('should include fee for withdrawals', () => {
+    it('should add fee to amount for withdrawals (Koinly requirement)', () => {
       const events = [createTestEvent({
         eventType: 'payment_sent',
+        amount: new Decimal('100'),
         fee: new Decimal('0.5')
       })];
       const result = formatTaxData(events, 'koinly', false);
       const lines = (result as string).split('\n');
 
-      expect(lines[1]).toContain('0.5');
+      // Amount column should contain amount + fee = 100.5
+      expect(lines[1]).toContain('100.5');
+      // Fee column should be empty (Koinly doesn't use separate fee for withdrawals)
+      const lastColumn = lines[1].split(',').pop();
+      expect(lastColumn?.trim()).toBe('');
     });
 
-    it('should not include fee for deposits', () => {
+    it('should NOT add fee to amount for deposits', () => {
       const events = [createTestEvent({
         eventType: 'payment_received',
+        amount: new Decimal('100'),
         fee: new Decimal('0.5')
       })];
       const result = formatTaxData(events, 'koinly', false);
       const lines = (result as string).split('\n');
-      const lastColumn = lines[1].split(',').pop();
 
+      // Amount column should just be the amount = 100
+      expect(lines[1]).toContain('100');
+      expect(lines[1]).not.toContain('100.5');
+      // Fee column should be empty for deposits
+      const lastColumn = lines[1].split(',').pop();
       expect(lastColumn?.trim()).toBe('');
     });
 
@@ -214,14 +224,14 @@ describe('taxFormatters', () => {
   describe('Accointing XLSX Format', () => {
     it('should format as Buffer for XLSX', () => {
       const events = [createTestEvent()];
-      const result = formatTaxData(events, 'accointing', false);
+      const result = formatTaxData(events, 'blockpit', false);
 
       expect(Buffer.isBuffer(result)).toBe(true);
     });
 
     it('should create valid XLSX structure', () => {
       const events = [createTestEvent()];
-      const result = formatTaxData(events, 'accointing', false);
+      const result = formatTaxData(events, 'blockpit', false);
 
       // XLSX files start with PK (ZIP header)
       expect((result as Buffer).toString('utf8', 0, 2)).toBe('PK');
@@ -229,7 +239,7 @@ describe('taxFormatters', () => {
 
     it('should handle coinbase as staking type', () => {
       const events = [createTestEvent({ eventType: 'coinbase_reward' })];
-      const result = formatTaxData(events, 'accointing', false);
+      const result = formatTaxData(events, 'blockpit', false);
 
       // Can't easily test XLSX content without parsing, but verify it doesn't throw
       expect(Buffer.isBuffer(result)).toBe(true);
@@ -237,7 +247,7 @@ describe('taxFormatters', () => {
 
     it('should handle payment_sent as withdraw type', () => {
       const events = [createTestEvent({ eventType: 'payment_sent' })];
-      const result = formatTaxData(events, 'accointing', false);
+      const result = formatTaxData(events, 'blockpit', false);
 
       expect(Buffer.isBuffer(result)).toBe(true);
     });
@@ -245,7 +255,7 @@ describe('taxFormatters', () => {
     it('should format timestamp without T and Z', () => {
       // Can't directly test XLSX content, but ensure no errors
       const events = [createTestEvent()];
-      const result = formatTaxData(events, 'accointing', false);
+      const result = formatTaxData(events, 'blockpit', false);
 
       expect(Buffer.isBuffer(result)).toBe(true);
       expect((result as Buffer).length).toBeGreaterThan(0);
