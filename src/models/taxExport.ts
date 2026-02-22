@@ -44,7 +44,7 @@ export interface BlockRewardRow {
   height: number;
   state_hash: string;
   timestamp: string;
-  creator_key: string;
+  receiver_key: string; // Report block rewards with the wallet that receives the Coinbase, not necessarily the block creator)
   total_reward: string; // bigint as string
 }
 

@@ -252,7 +252,7 @@ describe('taxExportQuery - Data Transformation', () => {
           height: 12345,
           state_hash: 'jxTestHash',
           timestamp: testTimestamp,
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '1440000000', // 1.44 MINA in nanomina
         },
       ]);
@@ -286,7 +286,7 @@ describe('taxExportQuery - Data Transformation', () => {
           height: 12345,
           state_hash: 'jxTestHash',
           timestamp: testTimestamp,
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '1440000000',
         },
       ]);
@@ -310,7 +310,7 @@ describe('taxExportQuery - Data Transformation', () => {
           height: 12345,
           state_hash: 'jxTestHash',
           timestamp: testTimestamp,
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '0',
         },
       ]);
@@ -698,14 +698,14 @@ describe('taxExportQuery - Data Transformation', () => {
           height: 12346,
           state_hash: 'jxHash2',
           timestamp: '1704153600000', // 2024-01-02
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '1440000000',
         },
         {
           height: 12345,
           state_hash: 'jxHash1',
           timestamp: '1704067200000', // 2024-01-01
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '1440000000',
         },
       ]);
@@ -795,7 +795,7 @@ describe('taxExportQuery - Data Transformation', () => {
           height: 12345,
           state_hash: 'jxTestHash',
           timestamp: testTimestamp,
-          creator_key: validAccount,
+          receiver_key: validAccount,
           total_reward: '1440000000',
         },
       ]);

@@ -192,19 +192,20 @@ function parseMinaTimestamp(timestamp: string): Date {
 
 /**
  * Transform block production rewards to tax events
+ * Reports on the coinbase receiver (accountKey), not the block creator
  */
 function transformBlockEvents(rows: BlockRewardRow[]): TaxEvent[] {
   return rows
     .filter((row) => parseInt(row.total_reward, 10) > 0)
     .map((row) => ({
-      accountKey: row.creator_key,
+      accountKey: row.receiver_key,
       timestamp: parseMinaTimestamp(row.timestamp),
       blockHeight: row.height,
       transactionHash: row.state_hash,
       eventType: 'coinbase_reward' as TaxEventType,
       amount: new Decimal(row.total_reward).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
       fee: new Decimal(0),
-      to: row.creator_key,
+      to: row.receiver_key,
       memo: 'Block production',
       isPoolPayout: false, // Block production is never a pool payout
     }));

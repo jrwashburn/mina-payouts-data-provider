@@ -10,8 +10,9 @@ import {
 
 /**
  * Query block production rewards (coinbase) received by the specified accounts
- * This includes blocks produced by the account AND blocks where someone else
- * produced but sent the coinbase reward to the account
+ * Reports on the coinbase receiver, not the block creator. When a block producer
+ * sends their coinbase to a different wallet, the reward is reported on the
+ * receiver's account for tax purposes.
  * Only returns canonical chain blocks
  */
 export async function queryBlockProduction(
@@ -25,7 +26,7 @@ export async function queryBlockProduction(
       b.height,
       b.state_hash,
       b.timestamp,
-      pk_receiver.value as creator_key,
+      pk_receiver.value as receiver_key,
       CAST(ic.fee AS BIGINT) as total_reward
     FROM blocks_internal_commands bic
     INNER JOIN internal_commands ic ON bic.internal_command_id = ic.id
