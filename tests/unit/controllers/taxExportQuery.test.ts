@@ -2,6 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pool } from 'pg';
 import { getTaxExport } from '../../../src/controllers/taxExportQuery.js';
 import type { TaxExportRequest } from '../../../src/models/taxExport.js';
+import {
+  queryBlockProduction,
+  querySnarkFees,
+  queryFeeTransfers,
+  queryPayments,
+  queryZkApps,
+  queryDelegations,
+} from '../../../src/database/taxExportDb.js';
+import { decodeMemo } from '../../../src/utils/memoDecoder.js';
+import { isPoolPayout } from '../../../src/utils/payoutDetector.js';
+import { formatTaxData } from '../../../src/utils/taxFormatters.js';
 
 // Mock all dependencies
 vi.mock('../../../src/database/taxExportDb.js', () => ({
@@ -244,6 +255,528 @@ describe('taxExportQuery - Request Validation', () => {
       const result = await getTaxExport(mockPool, request);
 
       expect(result.responseCode).toBe(200);
+    });
+  });
+});
+
+describe('taxExportQuery - Data Transformation', () => {
+  let mockPool: Pool;
+  const validAccount = 'B62q' + 'x'.repeat(51);
+  const testTimestamp = '1704067200000'; // 2024-01-01 00:00:00 UTC
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPool = {} as Pool;
+  });
+
+  describe('Block Production Transformation', () => {
+    it('should transform block rewards to tax events', async () => {
+      vi.mocked(queryBlockProduction).mockResolvedValueOnce([
+        {
+          height: 12345,
+          state_hash: 'jxTestHash',
+          timestamp: testTimestamp,
+          creator_key: validAccount,
+          total_reward: '1440000000', // 1.44 MINA in nanomina
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      expect(formatTaxData).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            eventType: 'coinbase_reward',
+            accountKey: validAccount,
+            blockHeight: 12345,
+            isPoolPayout: false,
+          }),
+        ]),
+        'json',
+        false
+      );
+    });
+
+    it('should convert nanomina to MINA for block rewards', async () => {
+      vi.mocked(queryBlockProduction).mockResolvedValueOnce([
+        {
+          height: 12345,
+          state_hash: 'jxTestHash',
+          timestamp: testTimestamp,
+          creator_key: validAccount,
+          total_reward: '1440000000',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events[0].amount.toString()).toBe('1.44');
+    });
+
+    it('should filter out zero reward blocks', async () => {
+      vi.mocked(queryBlockProduction).mockResolvedValueOnce([
+        {
+          height: 12345,
+          state_hash: 'jxTestHash',
+          timestamp: testTimestamp,
+          creator_key: validAccount,
+          total_reward: '0',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events.filter(e => e.eventType === 'coinbase_reward')).toHaveLength(0);
+    });
+  });
+
+  describe('Payment Transformation', () => {
+    it('should create payment_received event for incoming payments', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpTestHash',
+          timestamp: testTimestamp,
+          from_key: 'B62qSender' + 'x'.repeat(45),
+          to_key: validAccount,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('Test payment');
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const receivedEvent = events.find(e => e.eventType === 'payment_received');
+      expect(receivedEvent).toBeDefined();
+      expect(receivedEvent?.accountKey).toBe(validAccount);
+      expect(receivedEvent?.amount.toString()).toBe('1');
+      expect(receivedEvent?.fee.toString()).toBe('0');
+      expect(receivedEvent?.memo).toBe('Test payment');
+    });
+
+    it('should create payment_sent event for outgoing payments', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpTestHash',
+          timestamp: testTimestamp,
+          from_key: validAccount,
+          to_key: 'B62qReceiver' + 'x'.repeat(43),
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const sentEvent = events.find(e => e.eventType === 'payment_sent');
+      expect(sentEvent).toBeDefined();
+      expect(sentEvent?.accountKey).toBe(validAccount);
+      expect(sentEvent?.fee.toString()).toBe('0.01');
+    });
+
+    it('should create account_creation_fee event when applicable', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpTestHash',
+          timestamp: testTimestamp,
+          from_key: 'B62qSender' + 'x'.repeat(45),
+          to_key: validAccount,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: '1000000000', // 1 MINA
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const creationFeeEvent = events.find(e => e.eventType === 'account_creation_fee');
+      expect(creationFeeEvent).toBeDefined();
+      expect(creationFeeEvent?.amount.toString()).toBe('1');
+      expect(creationFeeEvent?.memo).toBe('Account creation fee');
+    });
+
+    it('should detect pool payouts for received payments', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpTestHash',
+          timestamp: testTimestamp,
+          from_key: 'B62qPool' + 'x'.repeat(47),
+          to_key: validAccount,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('Payout');
+      vi.mocked(isPoolPayout).mockReturnValue(true);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events[0].isPoolPayout).toBe(true);
+    });
+
+    it('should not detect pool payouts for sent payments', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpTestHash',
+          timestamp: testTimestamp,
+          from_key: validAccount,
+          to_key: 'B62qReceiver' + 'x'.repeat(43),
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('Payout');
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(isPoolPayout).not.toHaveBeenCalled();
+      expect(events[0].isPoolPayout).toBe(false);
+    });
+  });
+
+  describe('zkApp Transformation', () => {
+    it('should create zkapp_payment_received for positive balance change', async () => {
+      vi.mocked(decodeMemo).mockReturnValue('Test zkApp');
+      vi.mocked(isPoolPayout).mockReturnValue(false);
+      vi.mocked(queryZkApps).mockResolvedValueOnce([
+        {
+          zkapp_cmd_id: 1,
+          tx_hash: 'CkpZkAppHash',
+          height: 12345,
+          timestamp: testTimestamp,
+          memo: 'E4YTestMemo',
+          fee_payer: 'B62qFeePayer' + 'x'.repeat(43),
+          fee: '10000000',
+          account_key: validAccount,
+          net_balance_change: '1000000000', // Positive
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const zkappEvent = events.find(e => e.eventType === 'zkapp_payment_received');
+      expect(zkappEvent).toBeDefined();
+      expect(zkappEvent?.amount.toString()).toBe('1');
+    });
+
+    it('should create zkapp_payment_sent for negative balance change', async () => {
+      vi.mocked(decodeMemo).mockReturnValue('Test zkApp');
+      vi.mocked(queryZkApps).mockResolvedValueOnce([
+        {
+          zkapp_cmd_id: 1,
+          tx_hash: 'CkpZkAppHash',
+          height: 12345,
+          timestamp: testTimestamp,
+          memo: 'E4YTestMemo',
+          fee_payer: validAccount,
+          fee: '10000000',
+          account_key: validAccount,
+          net_balance_change: '-1000000000', // Negative
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const zkappEvent = events.find(e => e.eventType === 'zkapp_payment_sent');
+      expect(zkappEvent).toBeDefined();
+      expect(zkappEvent?.amount.toString()).toBe('1');
+    });
+
+    it('should include fee only for fee payer', async () => {
+      vi.mocked(queryZkApps).mockResolvedValueOnce([
+        {
+          zkapp_cmd_id: 1,
+          tx_hash: 'CkpZkAppHash',
+          height: 12345,
+          timestamp: testTimestamp,
+          memo: 'E4YTestMemo',
+          fee_payer: validAccount,
+          fee: '10000000',
+          account_key: validAccount,
+          net_balance_change: '-1000000000',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events[0].fee.toString()).toBe('0.01');
+    });
+  });
+
+  describe('Delegation Transformation', () => {
+    it('should create delegation event with zero amount', async () => {
+      vi.mocked(decodeMemo).mockReturnValue('Delegation');
+      vi.mocked(queryDelegations).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpDelegationHash',
+          timestamp: testTimestamp,
+          source_key: validAccount,
+          delegate_key: 'B62qDelegate' + 'x'.repeat(43),
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const delegationEvent = events.find(e => e.eventType === 'delegation');
+      expect(delegationEvent).toBeDefined();
+      expect(delegationEvent?.amount.toString()).toBe('0');
+      expect(delegationEvent?.fee.toString()).toBe('0.01');
+      expect(delegationEvent?.delegateTarget).toContain('B62qDelegate');
+      expect(delegationEvent?.isPoolPayout).toBe(false);
+    });
+  });
+
+  describe('Event Sorting', () => {
+    it('should sort events chronologically', async () => {
+      vi.mocked(queryBlockProduction).mockResolvedValueOnce([
+        {
+          height: 12346,
+          state_hash: 'jxHash2',
+          timestamp: '1704153600000', // 2024-01-02
+          creator_key: validAccount,
+          total_reward: '1440000000',
+        },
+        {
+          height: 12345,
+          state_hash: 'jxHash1',
+          timestamp: '1704067200000', // 2024-01-01
+          creator_key: validAccount,
+          total_reward: '1440000000',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events[0].blockHeight).toBe(12345); // Earlier block first
+      expect(events[1].blockHeight).toBe(12346);
+    });
+
+    it('should sort by account key when timestamps are equal', async () => {
+      const account1 = 'B62qAAA' + 'x'.repeat(48);
+      const account2 = 'B62qZZZ' + 'x'.repeat(48);
+
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpHash2',
+          timestamp: testTimestamp,
+          from_key: 'B62qSender' + 'x'.repeat(45),
+          to_key: account2,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: '',
+          account_creation_fee: null,
+        },
+        {
+          height: 12345,
+          tx_hash: 'CkpHash1',
+          timestamp: testTimestamp,
+          from_key: 'B62qSender' + 'x'.repeat(45),
+          to_key: account1,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: '',
+          account_creation_fee: null,
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [account1, account2],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      expect(events[0].accountKey).toBe(account1); // AAA before ZZZ
+      expect(events[1].accountKey).toBe(account2);
+    });
+  });
+
+  describe('Parallel Query Execution', () => {
+    it('should call all database queries in parallel', async () => {
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      expect(queryBlockProduction).toHaveBeenCalledTimes(1);
+      expect(querySnarkFees).toHaveBeenCalledTimes(1);
+      expect(queryFeeTransfers).toHaveBeenCalledTimes(1);
+      expect(queryPayments).toHaveBeenCalledTimes(1);
+      expect(queryZkApps).toHaveBeenCalledTimes(1);
+      expect(queryDelegations).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Success Response', () => {
+    it('should return success response with event count', async () => {
+      vi.mocked(queryBlockProduction).mockResolvedValueOnce([
+        {
+          height: 12345,
+          state_hash: 'jxTestHash',
+          timestamp: testTimestamp,
+          creator_key: validAccount,
+          total_reward: '1440000000',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      const result = await getTaxExport(mockPool, request);
+
+      expect(result.responseCode).toBe(200);
+      expect(result.responseMessages).toContain('Exported 1 transactions for 1 account(s)');
+    });
+
+    it('should indicate multiple accounts in response message', async () => {
+      const account2 = 'B62qBBB' + 'x'.repeat(48);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount, account2],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      const result = await getTaxExport(mockPool, request);
+
+      expect(result.responseMessages).toBeDefined();
+      expect(result.responseMessages![0]).toContain('2 account(s)');
     });
   });
 });
