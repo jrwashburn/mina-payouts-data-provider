@@ -102,7 +102,6 @@ export interface DelegationRow {
 
 // Format-specific row types
 export interface KoinlyRow {
-  account?: string;
   koinlyDate: string;
   amount: string;
   currency: string;
@@ -115,10 +114,12 @@ export interface KoinlyRow {
   sendingWallet: string;
   receivingWallet: string;
   fee: string;
+  account?: string;
 }
 
+//echo "Date,Timezone,Categorization,Side,Currency Symbol,Quantity,Price (per unit),Price Currency,Fee,Fee Currency,Contract Address"
+
 export interface LedgibleRow {
-  account?: string;
   date: string;
   timezone: string;
   categorization: string;
@@ -130,10 +131,10 @@ export interface LedgibleRow {
   fee: string;
   feeCurrency: string;
   contractAddress: string;
+  account?: string;
 }
 
 export interface AccointingRow {
-  account?: string;
   timestamp: string;
   type: string;
   baseCurrency: string;
@@ -142,4 +143,5 @@ export interface AccointingRow {
   quoteAmount: string;
   feeCurrency: string;
   feeAmount: string;
+  account?: string;
 }

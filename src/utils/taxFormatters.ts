@@ -1,6 +1,7 @@
 import XLSX from 'xlsx';
 import type { TaxEvent, KoinlyRow, LedgibleRow, AccointingRow } from '../models/taxExport.js';
 import { TAX_EXPORT_CONFIG } from '../configurations/taxConstants.js';
+import { eventLoopUtilization } from 'node:perf_hooks';
 
 /**
  * Format tax events based on requested format
@@ -29,11 +30,9 @@ export function formatTaxData(
 function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
   const rows: KoinlyRow[] = events.map((event) => {
     const isDeposit =
-      event.eventType === 'payment_received' ||
+      event.eventType.includes('_received') ||
       event.eventType === 'coinbase_reward' ||
-      event.eventType === 'snark_fee' ||
-      event.eventType === 'fee_transfer_received' ||
-      event.eventType === 'zkapp_payment_received';
+      event.eventType === 'snark_fee';
 
     const row: KoinlyRow = {
       koinlyDate: event.timestamp.toISOString(),
@@ -126,6 +125,9 @@ function formatAsAccointing(events: TaxEvent[], multipleAccounts: boolean): Buff
 
 /**
  * Get Koinly transaction type
+ *  coinbase, snark, fees are "mining"
+ *  payouts are "rewards"
+ *  otherwise "deposit" or "withdrawal" 
  */
 function getKoinlyType(event: TaxEvent): string {
   switch (event.eventType) {
@@ -150,8 +152,9 @@ function getKoinlyType(event: TaxEvent): string {
  * Get Koinly label
  */
 function getKoinlyLabel(event: TaxEvent): string {
-  if (event.isPoolPayout) return 'reward';
+  if (event.isPoolPayout) return 'Staking reward';
   if (event.eventType === 'snark_fee') return 'SNARK work';
+  if (event.eventType === 'coinbase_reward') return 'Block production reward';
   return '';
 }
 
@@ -167,7 +170,7 @@ function getDescription(event: TaxEvent): string {
     case 'snark_fee':
       return 'SNARK work fee';
     case 'fee_transfer_received':
-      return event.isPoolPayout ? 'Pool staking payout' : 'Fee transfer';
+      return event.isPoolPayout ? 'Pool staking payout' : 'Fees received for block production';
     case 'payment_received':
       return event.isPoolPayout ? 'Pool staking payout' : 'Payment received';
     case 'payment_sent':
@@ -260,7 +263,7 @@ function getKoinlyHeaders(multipleAccounts: boolean): string[] {
   ];
 
   if (multipleAccounts) {
-    return ['Account', ...headers];
+    return [...headers, 'Account'];
   }
 
   return headers;
@@ -285,7 +288,7 @@ function getLedgibleHeaders(multipleAccounts: boolean): string[] {
   ];
 
   if (multipleAccounts) {
-    return ['Account', ...headers];
+    return [...headers, 'Account'];
   }
 
   return headers;
@@ -307,7 +310,7 @@ function getAccointingHeaders(multipleAccounts: boolean): string[] {
   ];
 
   if (multipleAccounts) {
-    return ['Account', ...headers];
+    return [...headers, 'Account'];
   }
 
   return headers;

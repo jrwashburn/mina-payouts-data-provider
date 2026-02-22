@@ -16,54 +16,68 @@ process.env.NODE_ENV = 'test';
 
 // Mock the pg Pool to prevent actual database connections
 vi.mock('pg', () => {
-  const Pool = vi.fn(() => ({
-    query: vi.fn(),
-    connect: vi.fn(),
-    end: vi.fn(),
-    on: vi.fn(),
-  }));
+  const Pool = vi.fn(function() {
+    return {
+      query: vi.fn(),
+      connect: vi.fn(),
+      end: vi.fn(),
+      on: vi.fn(),
+    };
+  });
   return { Pool };
 });
 
 // Mock the database modules with fixture data - Vitest handles ES modules properly!
 vi.mock('../src/database/blockArchiveDb.js', () => ({
-  getLatestBlock: vi.fn(() => Promise.resolve({
-    epoch: consensusFixture.epoch,
-    blockheight: consensusFixture.blockHeight, // Return as string to match real database
-    globalslotsincegenesis: consensusFixture.globalSlotSinceGenesis, // Return as string to match real database
-    globalslot: Number(consensusFixture.globalSlotSinceGenesis),
-    slot: consensusFixture.slot,
-    statehash: consensusFixture.stateHash,
-    parenthash: consensusFixture.parentHash,
-    ledgerhash: consensusFixture.ledgerHash,
-    datetime: consensusFixture.datetime,
-  })),
-  getBlocks: vi.fn((key: string, minHeight: number, maxHeight: number) => {
+  getLatestBlock: vi.fn(function() {
+    return Promise.resolve({
+      epoch: consensusFixture.epoch,
+      blockheight: consensusFixture.blockHeight, // Return as string to match real database
+      globalslotsincegenesis: consensusFixture.globalSlotSinceGenesis, // Return as string to match real database
+      globalslot: Number(consensusFixture.globalSlotSinceGenesis),
+      slot: consensusFixture.slot,
+      statehash: consensusFixture.stateHash,
+      parenthash: consensusFixture.parentHash,
+      ledgerhash: consensusFixture.ledgerHash,
+      datetime: consensusFixture.datetime,
+    });
+  }),
+  getBlocks: vi.fn(function(key: string, minHeight: number, maxHeight: number) {
     // Return empty array for unrealistic height ranges
     if (minHeight > 1000000 || maxHeight > 1000000) {
       return Promise.resolve([]);
     }
     return Promise.resolve(blocksFixture.blocks);
   }),
-  getMinMaxBlocksInSlotRange: vi.fn(() => Promise.resolve([
-    epochFixture.minBlockHeight, // Return as string to match real database
-    epochFixture.maxBlockHeight  // Return as string to match real database
-  ])),
-  getHeightMissing: vi.fn(() => Promise.resolve([])),
-  getNullParents: vi.fn(() => Promise.resolve([])),
-  validateConsistency: vi.fn(() => Promise.resolve(undefined)),
-  getEpoch: vi.fn(() => Promise.resolve(1)),
+  getMinMaxBlocksInSlotRange: vi.fn(function() {
+    return Promise.resolve([
+      epochFixture.minBlockHeight, // Return as string to match real database
+      epochFixture.maxBlockHeight  // Return as string to match real database
+    ]);
+  }),
+  getHeightMissing: vi.fn(function() {
+    return Promise.resolve([]);
+  }),
+  getNullParents: vi.fn(function() {
+    return Promise.resolve([]);
+  }),
+  validateConsistency: vi.fn(function() {
+    return Promise.resolve(undefined);
+  }),
+  getEpoch: vi.fn(function() {
+    return Promise.resolve(1);
+  }),
 }));
 
 vi.mock('../src/database/stakingLedgerDb.js', () => ({
-  getStakingLedgers: vi.fn((hash: string) => {
+  getStakingLedgers: vi.fn(function(hash: string) {
     // Return empty array for unknown hashes
     if (hash === 'nonexistenthash') {
       return Promise.resolve([]);
     }
     return Promise.resolve(stakingLedgerFixture.ledgerEntries);
   }),
-  hashExists: vi.fn((hash: string) => {
+  hashExists: vi.fn(function(hash: string) {
     // Return false for unknown hashes
     if (hash === 'nonexistenthash') {
       return Promise.resolve([false, null]);
