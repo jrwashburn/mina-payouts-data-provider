@@ -1,5 +1,6 @@
 import { Decimal } from 'decimal.js';
 import type { Pool } from 'pg';
+import type { Logger } from 'pino';
 import type { ControllerResponse } from '../models/controller.js';
 import type {
   TaxExportRequest,
@@ -33,58 +34,98 @@ import { formatTaxData } from '../utils/taxFormatters.js';
 export async function getTaxExport(
   pool: Pool,
   request: TaxExportRequest,
+  log?: Logger,
 ): Promise<ControllerResponse> {
-  try {
-    // 1. Validate inputs
-    validateRequest(request);
+  log?.info({
+    accounts: request.accounts.length,
+    startDate: request.startDate,
+    endDate: request.endDate,
+    format: request.format,
+  }, 'Tax export request started');
 
-    // 2. Convert dates to Mina timestamps (start of day for start, end of day for end)
-    const startTimestamp = dateToMinaTimestamp(request.startDate, true);
-    const endTimestamp = dateToMinaTimestamp(request.endDate, false);
+  // 1. Validate inputs
+  validateRequest(request);
 
-    // 3. Query all transaction types in parallel
-    const [blocks, snarks, feeTransfers, payments, zkApps, delegations] = await Promise.all([
-      queryBlockProduction(pool, request.accounts, startTimestamp, endTimestamp),
-      querySnarkFees(pool, request.accounts, startTimestamp, endTimestamp),
-      queryFeeTransfers(pool, request.accounts, startTimestamp, endTimestamp),
-      queryPayments(pool, request.accounts, startTimestamp, endTimestamp),
-      queryZkApps(pool, request.accounts, startTimestamp, endTimestamp),
-      queryDelegations(pool, request.accounts, startTimestamp, endTimestamp),
-    ]);
+  // 2. Convert dates to Mina timestamps (start of day for start, end of day for end)
+  const startTimestamp = dateToMinaTimestamp(request.startDate, true);
+  const endTimestamp = dateToMinaTimestamp(request.endDate, false);
 
-    // 4. Transform to TaxEvent[] with payout detection
-    const events: TaxEvent[] = [
-      ...transformBlockEvents(blocks),
-      ...transformSnarkEvents(snarks),
-      ...transformFeeTransferEvents(feeTransfers, request.payoutConfig),
-      ...transformPaymentEvents(payments, request.accounts, request.payoutConfig),
-      ...transformZkAppEvents(zkApps, request.payoutConfig),
-      ...transformDelegationEvents(delegations),
-    ];
+  // 3. Query all transaction types in parallel
+  const [blocks, snarks, feeTransfers, payments, zkApps, delegations] = await Promise.all([
+    queryBlockProduction(pool, request.accounts, startTimestamp, endTimestamp),
+    querySnarkFees(pool, request.accounts, startTimestamp, endTimestamp),
+    queryFeeTransfers(pool, request.accounts, startTimestamp, endTimestamp),
+    queryPayments(pool, request.accounts, startTimestamp, endTimestamp),
+    queryZkApps(pool, request.accounts, startTimestamp, endTimestamp),
+    queryDelegations(pool, request.accounts, startTimestamp, endTimestamp),
+  ]);
 
-    // 5. Sort chronologically, then by account for consistency
-    events.sort((a, b) => {
-      const timeDiff = a.timestamp.getTime() - b.timestamp.getTime();
-      if (timeDiff !== 0) return timeDiff;
-      return a.accountKey.localeCompare(b.accountKey);
-    });
+  // 4. Transform to TaxEvent[] with payout detection
+  const events: TaxEvent[] = [
+    ...transformBlockEvents(blocks),
+    ...transformSnarkEvents(snarks),
+    ...transformFeeTransferEvents(feeTransfers, request.payoutConfig),
+    ...transformPaymentEvents(payments, request.accounts, request.payoutConfig),
+    ...transformZkAppEvents(zkApps, request.payoutConfig),
+    ...transformDelegationEvents(delegations),
+  ];
 
-    // 6. Format based on requested format
-    const responseData = formatTaxData(events, request.format, request.accounts.length > 1);
+  // 5. Sort chronologically, then by account for consistency
+  events.sort((a, b) => {
+    const timeDiff = a.timestamp.getTime() - b.timestamp.getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return a.accountKey.localeCompare(b.accountKey);
+  });
 
-    return {
-      responseData,
-      responseCode: 200,
-      responseMessages: [
-        `Exported ${events.length} transactions for ${request.accounts.length} account(s)`,
-      ],
-    };
-  } catch (error) {
-    return {
-      responseCode: 500,
-      responseError: (error as Error).message,
-    };
+  // 6. Format based on requested format
+  const responseData = formatTaxData(events, request.format, request.accounts.length > 1);
+
+  log?.info({
+    eventCount: events.length,
+    accountCount: request.accounts.length,
+    format: request.format,
+  }, 'Tax export completed successfully');
+
+  return {
+    responseData,
+    responseCode: 200,
+    responseMessages: [
+      `Exported ${events.length} transactions for ${request.accounts.length} account(s)`,
+    ],
+  };
+}
+
+/**
+ * Validates a date string in strict YYYY-MM-DD format
+ * Ensures the date is valid and matches the exact format
+ *
+ * @param dateString - Date string to validate
+ * @param paramName - Parameter name for error messages
+ * @returns Validated Date object
+ * @throws Error if date format is invalid or date doesn't exist
+ */
+function validateDateFormat(dateString: string, paramName: string): Date {
+  // Validate strict YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateString)) {
+    throw new Error(`${paramName} must be in YYYY-MM-DD format, got: ${dateString}`);
   }
+
+  // Parse as UTC to avoid timezone issues
+  const date = new Date(dateString + 'T00:00:00.000Z');
+
+  if (isNaN(date.getTime())) {
+    throw new Error(`Invalid ${paramName}: ${dateString}`);
+  }
+
+  // Verify round-trip to ensure date was actually valid
+  // This catches cases like 2024-02-30 or 2024-13-01
+  const isoString = date.toISOString().split('T')[0];
+  if (isoString !== dateString) {
+    throw new Error(`Invalid ${paramName}: ${dateString} (not a valid calendar date)`);
+  }
+
+  return date;
 }
 
 /**
@@ -106,17 +147,9 @@ function validateRequest(request: TaxExportRequest): void {
     }
   }
 
-  // Validate dates
-  const startDate = new Date(request.startDate);
-  const endDate = new Date(request.endDate);
-
-  if (isNaN(startDate.getTime())) {
-    throw new Error(`Invalid startDate: ${request.startDate}`);
-  }
-
-  if (isNaN(endDate.getTime())) {
-    throw new Error(`Invalid endDate: ${request.endDate}`);
-  }
+  // Validate dates with strict YYYY-MM-DD format
+  const startDate = validateDateFormat(request.startDate, 'startDate');
+  const endDate = validateDateFormat(request.endDate, 'endDate');
 
   if (endDate < startDate) {
     throw new Error('endDate must be after startDate');
@@ -124,7 +157,7 @@ function validateRequest(request: TaxExportRequest): void {
 
   const daysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
   if (daysDiff > TAX_EXPORT_CONFIG.MAX_EXPORT_DAYS) {
-    throw new Error(`Date range exceeds maximum of ${TAX_EXPORT_CONFIG.MAX_EXPORT_DAYS} days`);
+    throw new Error(`Date range exceeds maximum of ${TAX_EXPORT_CONFIG.MAX_EXPORT_DAYS} days (1 year)`);
   }
 
   // Validate format

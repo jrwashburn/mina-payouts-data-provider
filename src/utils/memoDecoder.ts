@@ -1,4 +1,5 @@
 import bs58 from 'bs58';
+import { TAX_EXPORT_CONFIG } from '../configurations/taxConstants.js';
 
 /**
  * Decodes a base58-encoded Mina memo to UTF-8 text
@@ -12,9 +13,8 @@ import bs58 from 'bs58';
  * @returns Decoded UTF-8 text, or empty string if decoding fails
  */
 export function decodeMemo(base58Memo: string | null | undefined): string {
-  if (!base58Memo || base58Memo === '' ||
-      base58Memo === 'E4YM2vTHhWEg66xpj52JErHUBU4pZ1yageL4TVDDpTTSsv8mK6YaH') {
-    return ''; // Empty memo hash
+  if (!base58Memo || base58Memo === '' || base58Memo === TAX_EXPORT_CONFIG.EMPTY_MEMO_HASH) {
+    return '';
   }
 
   try {

@@ -136,7 +136,7 @@ async function executeExport(request: TaxExportRequest, res: Response) {
   }
 
   // Execute controller
-  const result = await getTaxExport(getPool(), request);
+  const result = await getTaxExport(getPool(), request, res.req.log);
 
   if (result.responseError) {
     return res.status(result.responseCode || 500).json({

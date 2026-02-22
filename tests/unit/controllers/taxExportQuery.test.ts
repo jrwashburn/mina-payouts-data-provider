@@ -53,10 +53,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('At least one account is required');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('At least one account is required');
     });
 
     it('should return error when accounts exceed maximum limit', async () => {
@@ -67,10 +64,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('Maximum 10 accounts per request');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('Maximum 10 accounts per request');
     });
 
     it('should return error for invalid account key length', async () => {
@@ -81,10 +75,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('Invalid account key length');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('Invalid account key length');
     });
 
     it('should accept valid account key (55 characters)', async () => {
@@ -113,10 +104,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('Invalid startDate');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('startDate must be in YYYY-MM-DD format');
     });
 
     it('should return error for invalid endDate', async () => {
@@ -127,10 +115,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('Invalid endDate');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('endDate must be in YYYY-MM-DD format');
     });
 
     it('should return error when endDate is before startDate', async () => {
@@ -141,31 +126,25 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('endDate must be after startDate');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('endDate must be after startDate');
     });
 
-    it('should return error when date range exceeds maximum (3650 days)', async () => {
+    it('should return error when date range exceeds maximum (365 days)', async () => {
       const request: TaxExportRequest = {
         accounts: [validAccount],
-        startDate: '2014-01-01',
-        endDate: '2024-01-02', // > 10 years
+        startDate: '2023-01-01',
+        endDate: '2024-01-02', // > 1 year
         format: 'json',
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('exceeds maximum');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('exceeds maximum of 365 days');
     });
 
-    it('should accept date range at maximum limit (3650 days)', async () => {
+    it('should accept date range at maximum limit (365 days)', async () => {
       const request: TaxExportRequest = {
         accounts: [validAccount],
-        startDate: '2014-01-01',
-        endDate: '2023-12-30', // Exactly 3650 days
+        startDate: '2023-01-01',
+        endDate: '2023-12-31', // Exactly 365 days
         format: 'json',
       };
 
@@ -199,10 +178,7 @@ describe('taxExportQuery - Request Validation', () => {
         format: 'invalid' as any,
       };
 
-      const result = await getTaxExport(mockPool, request);
-
-      expect(result.responseCode).toBe(500);
-      expect(result.responseError).toContain('Invalid format');
+      await expect(getTaxExport(mockPool, request)).rejects.toThrow('Invalid format');
     });
 
     it('should accept koinly format', async () => {

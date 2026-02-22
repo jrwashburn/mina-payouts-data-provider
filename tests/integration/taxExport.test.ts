@@ -135,7 +135,7 @@ describe('Tax Export Integration Tests', () => {
           });
 
         if (response.status === 200) {
-          expect(response.header['content-type']).toBe('text/csv');
+          expect(response.header['content-type']).toContain('text/csv');
           expect(response.header['content-disposition']).toContain('.csv');
           expect(response.header['content-disposition']).toContain('koinly');
         }
@@ -151,7 +151,7 @@ describe('Tax Export Integration Tests', () => {
           });
 
         if (response.status === 200) {
-          expect(response.header['content-type']).toBe('text/csv');
+          expect(response.header['content-type']).toContain('text/csv');
           expect(response.header['content-disposition']).toContain('.csv');
           expect(response.header['content-disposition']).toContain('ledgible');
         }
