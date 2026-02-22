@@ -562,6 +562,110 @@ describe('taxExportQuery - Data Transformation', () => {
       expect(selfTransferEvent.fee.toString()).toBe('0.01');
       expect(selfTransferEvent.memo).toBe('Self-Transfer Fee');
     });
+
+    it('should create both sender and receiver events when both accounts are exported', async () => {
+      const senderAccount = 'B62qSender' + 'x'.repeat(45);
+      const receiverAccount = 'B62qReceiver' + 'x'.repeat(43);
+
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpDualAccountHash',
+          timestamp: testTimestamp,
+          from_key: senderAccount,
+          to_key: receiverAccount,
+          amount: '1000000000', // 1 MINA
+          fee: '10000000', // 0.01 MINA
+          memo: 'E4YTestMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('Dual account payment');
+
+      const request: TaxExportRequest = {
+        accounts: [senderAccount, receiverAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+
+      // Should have exactly 2 events: one for sender, one for receiver
+      expect(events).toHaveLength(2);
+
+      // Verify sender event
+      const senderEvent = events.find(e => e.eventType === 'payment_sent');
+      expect(senderEvent).toBeDefined();
+      expect(senderEvent?.accountKey).toBe(senderAccount);
+      expect(senderEvent?.amount.toString()).toBe('1');
+      expect(senderEvent?.fee.toString()).toBe('0.01');
+      expect(senderEvent?.from).toBe(senderAccount);
+      expect(senderEvent?.to).toBe(receiverAccount);
+      expect(senderEvent?.memo).toBe('Dual account payment');
+      expect(senderEvent?.isPoolPayout).toBe(false);
+
+      // Verify receiver event
+      const receiverEvent = events.find(e => e.eventType === 'payment_received');
+      expect(receiverEvent).toBeDefined();
+      expect(receiverEvent?.accountKey).toBe(receiverAccount);
+      expect(receiverEvent?.amount.toString()).toBe('1');
+      expect(receiverEvent?.fee.toString()).toBe('0'); // Receiver pays no fee
+      expect(receiverEvent?.from).toBe(senderAccount);
+      expect(receiverEvent?.to).toBe(receiverAccount);
+      expect(receiverEvent?.memo).toBe('Dual account payment');
+    });
+
+    it('should add account creation fee when both accounts exported and receiver is new', async () => {
+      const senderAccount = 'B62qSender' + 'x'.repeat(45);
+      const receiverAccount = 'B62qReceiver' + 'x'.repeat(43);
+
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpDualAccountCreationHash',
+          timestamp: testTimestamp,
+          from_key: senderAccount,
+          to_key: receiverAccount,
+          amount: '1000000000',
+          fee: '10000000',
+          memo: 'E4YTestMemo',
+          account_creation_fee: '1000000000', // 1 MINA
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('First payment');
+
+      const request: TaxExportRequest = {
+        accounts: [senderAccount, receiverAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+
+      // Should have 3 events: sender, receiver, and account creation fee
+      expect(events).toHaveLength(3);
+
+      const senderEvent = events.find(e => e.eventType === 'payment_sent');
+      const receiverEvent = events.find(e => e.eventType === 'payment_received');
+      const creationFeeEvent = events.find(e => e.eventType === 'account_creation_fee');
+
+      expect(senderEvent).toBeDefined();
+      expect(receiverEvent).toBeDefined();
+      expect(creationFeeEvent).toBeDefined();
+
+      // Verify account creation fee is for receiver
+      expect(creationFeeEvent?.accountKey).toBe(receiverAccount);
+      expect(creationFeeEvent?.amount.toString()).toBe('1');
+      expect(creationFeeEvent?.fee.toString()).toBe('0');
+    });
   });
 
   describe('zkApp Transformation', () => {

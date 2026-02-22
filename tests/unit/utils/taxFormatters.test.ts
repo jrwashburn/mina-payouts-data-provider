@@ -165,13 +165,13 @@ describe('taxFormatters', () => {
   });
 
   describe('Ledgible CSV Format', () => {
-    it('should format single event as CSV with 11 columns (single account)', () => {
+    it('should format single event as CSV with 13 columns (single account)', () => {
       const events = [createTestEvent()];
       const result = formatTaxData(events, 'ledgible', false);
 
       const lines = (result as string).split('\n');
       expect(lines[0]).toContain('Date');
-      expect(lines[0].split(',').length).toBe(11);
+      expect(lines[0].split(',').length).toBe(13);
     });
 
     it('should format date as MM/DD/YYYY HH:mm:ss', () => {

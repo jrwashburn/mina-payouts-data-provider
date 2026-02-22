@@ -258,6 +258,7 @@ function transformFeeTransferEvents(
 
 /**
  * Transform payment transactions to tax events
+ * Creates separate events for sender and receiver when both are in the export
  */
 function transformPaymentEvents(
   rows: PaymentRow[],
@@ -291,40 +292,58 @@ function transformPaymentEvents(
       continue; // Skip normal processing
     }
 
-    const event = {
-      accountKey: isSender ? row.from_key : row.to_key,
-      timestamp: parseMinaTimestamp(row.timestamp),
-      blockHeight: row.height,
-      transactionHash: row.tx_hash,
-      eventType: (isSender ? 'payment_sent' : 'payment_received') as TaxEventType,
-      amount: new Decimal(row.amount).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
-      fee: isSender
-        ? new Decimal(row.fee).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA)
-        : new Decimal(0),
-      from: row.from_key,
-      to: row.to_key,
-      memo: memo,
-      isPoolPayout: !isSender && isPoolPayout({ memo, from: row.from_key }, payoutConfig),
-    };
+    // Create sender event if sender is in the export
+    if (isSender) {
+      const senderEvent: TaxEvent = {
+        accountKey: row.from_key,
+        timestamp: parseMinaTimestamp(row.timestamp),
+        blockHeight: row.height,
+        transactionHash: row.tx_hash,
+        eventType: 'payment_sent' as TaxEventType,
+        amount: new Decimal(row.amount).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+        fee: new Decimal(row.fee).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+        from: row.from_key,
+        to: row.to_key,
+        memo: memo,
+        isPoolPayout: false,
+      };
+      events.push(senderEvent);
+    }
 
-    events.push(event);
-
-    // If this payment created the receiver's account, add account creation fee event
-    if (row.account_creation_fee && isReceiver) {
-      const creationFeeEvent: TaxEvent = {
+    // Create receiver event if receiver is in the export
+    if (isReceiver) {
+      const receiverEvent: TaxEvent = {
         accountKey: row.to_key,
         timestamp: parseMinaTimestamp(row.timestamp),
         blockHeight: row.height,
         transactionHash: row.tx_hash,
-        eventType: 'account_creation_fee' as TaxEventType,
-        amount: new Decimal(row.account_creation_fee).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
-        fee: new Decimal(0),
-        from: row.to_key,
-        to: undefined,
-        memo: 'Account creation fee',
-        isPoolPayout: false,
+        eventType: 'payment_received' as TaxEventType,
+        amount: new Decimal(row.amount).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+        fee: new Decimal(0), // Receiver never pays the fee
+        from: row.from_key,
+        to: row.to_key,
+        memo: memo,
+        isPoolPayout: isPoolPayout({ memo, from: row.from_key }, payoutConfig),
       };
-      events.push(creationFeeEvent);
+      events.push(receiverEvent);
+
+      // If this payment created the receiver's account, add account creation fee event
+      if (row.account_creation_fee) {
+        const creationFeeEvent: TaxEvent = {
+          accountKey: row.to_key,
+          timestamp: parseMinaTimestamp(row.timestamp),
+          blockHeight: row.height,
+          transactionHash: row.tx_hash,
+          eventType: 'account_creation_fee' as TaxEventType,
+          amount: new Decimal(row.account_creation_fee).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+          fee: new Decimal(0),
+          from: row.to_key,
+          to: undefined,
+          memo: 'Account creation fee',
+          isPoolPayout: false,
+        };
+        events.push(creationFeeEvent);
+      }
     }
   }
 
