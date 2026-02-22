@@ -268,7 +268,27 @@ function transformPaymentEvents(
   for (const row of rows) {
     const isSender = accountKeys.includes(row.from_key);
     const isReceiver = accountKeys.includes(row.to_key);
+    const isSelfTransfer = row.from_key === row.to_key;
     const memo = decodeMemo(row.memo);
+
+    // Self-transfers: Show as withdrawal with 0 amount and actual fee
+    if (isSelfTransfer && isSender) {
+      const selfTransferEvent: TaxEvent = {
+        accountKey: row.from_key,
+        timestamp: parseMinaTimestamp(row.timestamp),
+        blockHeight: row.height,
+        transactionHash: row.tx_hash,
+        eventType: 'payment_sent' as TaxEventType,
+        amount: new Decimal(0), // No actual transfer
+        fee: new Decimal(row.fee).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+        from: row.from_key,
+        to: row.to_key,
+        memo: memo ? `Self-Transfer Fee: ${memo}` : 'Self-Transfer Fee',
+        isPoolPayout: false,
+      };
+      events.push(selfTransferEvent);
+      continue; // Skip normal processing
+    }
 
     const event = {
       accountKey: isSender ? row.from_key : row.to_key,

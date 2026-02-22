@@ -10,6 +10,7 @@ dist/
 deploy/deployment*.yaml
 deploy/deploy*.sh
 deploy/*.crt
+scripts/
 
 # Test database backups - these are large and sensitive
 # Place production backups in tests/db-backups/ for local testing

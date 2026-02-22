@@ -488,6 +488,80 @@ describe('taxExportQuery - Data Transformation', () => {
       expect(isPoolPayout).not.toHaveBeenCalled();
       expect(events[0].isPoolPayout).toBe(false);
     });
+
+    it('should handle self-transfers as fee-only withdrawals', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpSelfTransferHash',
+          timestamp: testTimestamp,
+          from_key: validAccount,
+          to_key: validAccount, // Same account
+          amount: '1000000000', // Original amount (not used for self-transfer)
+          fee: '1000000', // 0.001 MINA fee
+          memo: 'E4YVotingMemo',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('Voting transaction');
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const selfTransferEvent = events.find(e => e.eventType === 'payment_sent');
+
+      expect(selfTransferEvent).toBeDefined();
+      expect(selfTransferEvent?.accountKey).toBe(validAccount);
+      expect(selfTransferEvent?.amount.toString()).toBe('0'); // Amount is 0
+      expect(selfTransferEvent?.fee.toString()).toBe('0.001'); // Fee is actual fee
+      expect(selfTransferEvent?.from).toBe(validAccount);
+      expect(selfTransferEvent?.to).toBe(validAccount);
+      expect(selfTransferEvent?.memo).toBe('Self-Transfer Fee: Voting transaction');
+      expect(selfTransferEvent?.isPoolPayout).toBe(false);
+    });
+
+    it('should handle self-transfers with empty memo', async () => {
+      vi.mocked(queryPayments).mockResolvedValueOnce([
+        {
+          height: 12345,
+          tx_hash: 'CkpSelfTransferHash',
+          timestamp: testTimestamp,
+          from_key: validAccount,
+          to_key: validAccount,
+          amount: '5000000000',
+          fee: '10000000', // 0.01 MINA fee
+          memo: '',
+          account_creation_fee: null,
+        },
+      ]);
+
+      vi.mocked(decodeMemo).mockReturnValue('');
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const selfTransferEvent = events[0];
+
+      expect(selfTransferEvent.eventType).toBe('payment_sent');
+      expect(selfTransferEvent.amount.toString()).toBe('0');
+      expect(selfTransferEvent.fee.toString()).toBe('0.01');
+      expect(selfTransferEvent.memo).toBe('Self-Transfer Fee');
+    });
   });
 
   describe('zkApp Transformation', () => {
