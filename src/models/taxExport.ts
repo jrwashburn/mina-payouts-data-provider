@@ -1,0 +1,145 @@
+import type { Decimal } from 'decimal.js';
+
+export interface TaxExportRequest {
+  accounts: string[];
+  startDate: string;
+  endDate: string;
+  format: 'koinly' | 'ledgible' | 'accointing' | 'json';
+  payoutConfig?: PayoutConfig;
+}
+
+export interface PayoutConfig {
+  memoKeywords?: string[];
+  payoutAccounts?: string[];
+}
+
+export type TaxEventType =
+  | 'coinbase_reward' // Block production
+  | 'snark_fee' // SNARK work
+  | 'fee_transfer_received' // Fee transfer (pool payout via coinbase)
+  | 'payment_sent' // Payment sent
+  | 'payment_received' // Payment received
+  | 'zkapp_payment_sent' // zkApp with negative balance change
+  | 'zkapp_payment_received' // zkApp with positive balance change
+  | 'delegation' // Delegation change (stake delegation)
+  | 'account_creation_fee'; // Account creation fee (1 MINA deducted)
+
+export interface TaxEvent {
+  accountKey: string;
+  timestamp: Date;
+  blockHeight: number;
+  transactionHash: string;
+  eventType: TaxEventType;
+  amount: Decimal;
+  fee: Decimal;
+  from?: string;
+  to?: string;
+  memo?: string;
+  isPoolPayout: boolean;
+  delegateTarget?: string; // For delegation events
+}
+
+// Database row types
+export interface BlockRewardRow {
+  height: number;
+  state_hash: string;
+  timestamp: string;
+  creator_key: string;
+  total_reward: string; // bigint as string
+}
+
+export interface SnarkFeeRow {
+  height: number;
+  state_hash: string;
+  timestamp: string;
+  receiver_key: string;
+  amount: string; // bigint as string
+  tx_hash: string;
+}
+
+export interface FeeTransferRow {
+  height: number;
+  state_hash: string;
+  timestamp: string;
+  receiver_key: string;
+  amount: string; // bigint as string
+  tx_hash: string;
+}
+
+export interface PaymentRow {
+  height: number;
+  tx_hash: string;
+  timestamp: string;
+  from_key: string;
+  to_key: string;
+  amount: string; // bigint as string
+  fee: string; // bigint as string
+  memo: string;
+  account_creation_fee: string | null; // bigint as string, null if no account created
+}
+
+export interface ZkAppRow {
+  zkapp_cmd_id: number;
+  tx_hash: string;
+  height: number;
+  timestamp: string;
+  memo: string;
+  fee_payer: string;
+  fee: string; // bigint as string
+  account_key: string;
+  net_balance_change: string; // bigint as string
+}
+
+export interface DelegationRow {
+  height: number;
+  tx_hash: string;
+  timestamp: string;
+  source_key: string;
+  delegate_key: string;
+  fee: string; // bigint as string
+  memo: string;
+}
+
+// Format-specific row types
+export interface KoinlyRow {
+  account?: string;
+  koinlyDate: string;
+  amount: string;
+  currency: string;
+  label: string;
+  txHash: string;
+  netWorthAmount: string;
+  netWorthCurrency: string;
+  description: string;
+  type: string;
+  sendingWallet: string;
+  receivingWallet: string;
+  fee: string;
+}
+
+export interface LedgibleRow {
+  account?: string;
+  date: string;
+  timezone: string;
+  categorization: string;
+  side: string;
+  currencySymbol: string;
+  quantity: string;
+  pricePerUnit: string;
+  priceCurrency: string;
+  fee: string;
+  feeCurrency: string;
+  contractAddress: string;
+}
+
+export interface AccointingRow {
+  account?: string;
+  timestamp: string;
+  type: string;
+  baseCurrency: string;
+  baseAmount: string;
+  quoteCurrency: string;
+  quoteAmount: string;
+  feeCurrency: string;
+  feeAmount: string;
+}

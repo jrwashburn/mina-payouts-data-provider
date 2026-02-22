@@ -15,6 +15,7 @@ import epochRouter from './routes/epoch.js';
 import blocksRouter from './routes/blocks.js';
 import stakingLedgerRouter from './routes/stakingLedgers.js';
 import healthRouter from './routes/health.js';
+import taxExportRouter from './routes/taxExport.js';
 
 const limiter = rateLimit({
   windowMs: 2 * 60 * 1000, // 2 minutes
@@ -41,6 +42,7 @@ const expressLogger = pinoHttp({
 
 const app = express();
 app.set('trust proxy', 2)
+app.use(express.json()); // Parse JSON request bodies
 app.use(responseTime());
 app.use(helmet());
 app.use(limiter);
@@ -51,6 +53,7 @@ app.use('/consensus', cors(), checkTrustArchiveDatabaseHeight, consensusRouter);
 app.use('/epoch', cors(), checkTrustArchiveDatabaseHeight, epochRouter);
 app.use('/blocks', cors(), checkTrustArchiveDatabaseHeight, blocksRouter);
 app.use('/staking-ledgers', cors(), stakingLedgerRouter);
+app.use('/tax-export', cors(), taxExportRouter);
 
 app.listen(configuration.port, () => {
   logger.info(`Mina Pool Payout Data Provider listening on ${configuration.port}`);
