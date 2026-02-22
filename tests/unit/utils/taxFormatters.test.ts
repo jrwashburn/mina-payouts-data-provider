@@ -55,7 +55,9 @@ describe('taxFormatters', () => {
 
       expect(typeof result).toBe('string');
       const lines = (result as string).split('\n');
-      expect(lines[0]).toContain('Koinly Date');
+      expect(lines[0]).toContain('Date');
+      expect(lines[0]).toContain('Sent Amount');
+      expect(lines[0]).toContain('Received Amount');
       expect(lines[0].split(',').length).toBe(12);
     });
 
@@ -68,28 +70,37 @@ describe('taxFormatters', () => {
       expect(lines[0].split(',').length).toBe(13);
     });
 
-    it('should format coinbase_reward as mining type', () => {
-      const events = [createTestEvent({ eventType: 'coinbase_reward' })];
+    it('should format coinbase_reward with Mining label', () => {
+      const events = [createTestEvent({ eventType: 'coinbase_reward', amount: new Decimal('100'), memo: '' })];
       const result = formatTaxData(events, 'koinly', false);
 
-      expect(result).toContain('mining');
+      // Should have received amount and Mining label
+      expect(result).toContain('100');
+      expect(result).toContain('Mining');
+      expect(result).toContain('Block production reward'); // Description
     });
 
-    it('should format pool payout as reward type', () => {
+    it('should format pool payout with Reward label', () => {
       const events = [createTestEvent({
         eventType: 'payment_received',
         isPoolPayout: true
       })];
       const result = formatTaxData(events, 'koinly', false);
 
-      expect(result).toContain('reward');
+      expect(result).toContain('Reward');
     });
 
-    it('should format payment_sent as withdrawal type', () => {
-      const events = [createTestEvent({ eventType: 'payment_sent' })];
+    it('should format payment_sent with sent amount and fee', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_sent',
+        amount: new Decimal('100'),
+        fee: new Decimal('0.1')
+      })];
       const result = formatTaxData(events, 'koinly', false);
 
-      expect(result).toContain('withdrawal');
+      // Should have sent amount and separate fee
+      expect(result).toContain('100');
+      expect(result).toContain('0.1');
     });
 
     it('should add fee to amount for withdrawals (Koinly requirement)', () => {
@@ -101,11 +112,11 @@ describe('taxFormatters', () => {
       const result = formatTaxData(events, 'koinly', false);
       const lines = (result as string).split('\n');
 
-      // Amount column should contain amount + fee = 100.5
-      expect(lines[1]).toContain('100.5');
-      // Fee column should be empty (Koinly doesn't use separate fee for withdrawals)
-      const lastColumn = lines[1].split(',').pop();
-      expect(lastColumn?.trim()).toBe('');
+      // Sent Amount should be 100 (not 100.5 - fee is separate)
+      const values = lines[1].split(',');
+      expect(values[1]).toBe('100');
+      // Fee Amount should be 0.5
+      expect(values[5]).toBe('0.5');
     });
 
     it('should NOT add fee to amount for deposits', () => {
@@ -117,12 +128,11 @@ describe('taxFormatters', () => {
       const result = formatTaxData(events, 'koinly', false);
       const lines = (result as string).split('\n');
 
-      // Amount column should just be the amount = 100
-      expect(lines[1]).toContain('100');
-      expect(lines[1]).not.toContain('100.5');
-      // Fee column should be empty for deposits
-      const lastColumn = lines[1].split(',').pop();
-      expect(lastColumn?.trim()).toBe('');
+      // Received Amount should be 100
+      const values = lines[1].split(',');
+      expect(values[3]).toBe('100');
+      // Fee Amount should be empty for incoming transactions
+      expect(values[5]).toBe('');
     });
 
     it('should use ISO timestamp format', () => {
@@ -132,14 +142,15 @@ describe('taxFormatters', () => {
       expect(result).toContain('2024-01-15T10:30:00.000Z');
     });
 
-    it('should include SNARK work label', () => {
+    it('should include Mining label for SNARK work', () => {
       const events = [createTestEvent({
         eventType: 'snark_fee',
-        memo: 'SNARK work'
+        memo: ''
       })];
       const result = formatTaxData(events, 'koinly', false);
 
-      expect(result).toContain('SNARK work');
+      expect(result).toContain('Mining');
+      expect(result).toContain('SNARK work'); // Description
     });
 
     it('should escape CSV special characters', () => {

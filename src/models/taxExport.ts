@@ -102,18 +102,18 @@ export interface DelegationRow {
 
 // Format-specific row types
 export interface KoinlyRow {
-  koinlyDate: string;
-  amount: string;
-  currency: string;
-  label: string;
-  txHash: string;
+  date: string;
+  sentAmount: string;
+  sentCurrency: string;
+  receivedAmount: string;
+  receivedCurrency: string;
+  feeAmount: string;
+  feeCurrency: string;
   netWorthAmount: string;
   netWorthCurrency: string;
+  label: string;
   description: string;
-  type: string;
-  sendingWallet: string;
-  receivingWallet: string;
-  fee: string;
+  txHash: string;
   account?: string;
 }
 
@@ -136,12 +136,15 @@ export interface LedgibleRow {
 
 export interface BlockpitRow {
   timestamp: string;
-  type: string;
-  baseCurrency: string;
-  baseAmount: string;
-  quoteCurrency: string;
-  quoteAmount: string;
-  feeCurrency: string;
+  integrationName: string;
+  label: string;
+  outgoingAsset: string;
+  outgoingAmount: string;
+  incomingAsset: string;
+  incomingAmount: string;
+  feeAsset: string;
   feeAmount: string;
+  comment: string;
+  trxId: string;
   account?: string;
 }

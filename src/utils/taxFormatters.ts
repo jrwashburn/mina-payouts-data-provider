@@ -24,37 +24,32 @@ export function formatTaxData(
 }
 
 /**
- * Format as Koinly CSV (12 or 13 columns)
- *
- * IMPORTANT: For withdrawals, Koinly requires the amount to include the fee.
- * Per Koinly documentation: "A withdrawal cannot have a separate fee field -
- * if you paid a fee then the withdrawn amount should include the fee as well."
+ * Format as Koinly CSV (Advanced Custom Format)
+ * Uses separate Sent/Received columns with address-specific currency format
  */
 function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
   const rows: KoinlyRow[] = events.map((event) => {
-    const isDeposit =
+    const isIncoming =
       event.eventType.includes('_received') ||
       event.eventType === 'coinbase_reward' ||
       event.eventType === 'snark_fee';
 
-    // For withdrawals, add fee to amount (Koinly requirement)
-    const amountForKoinly = isDeposit
-      ? event.amount
-      : event.amount.plus(event.fee);
+    // Use Koinly's address-specific currency format: SYMBOL:ADDRESS:BLOCKCHAIN
+    const currency = `${TAX_EXPORT_CONFIG.CURRENCY_SYMBOL}:${event.accountKey}:${TAX_EXPORT_CONFIG.CURRENCY_SYMBOL}`;
 
     const row: KoinlyRow = {
-      koinlyDate: event.timestamp.toISOString(),
-      amount: amountForKoinly.toString(),
-      currency: TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
-      label: getKoinlyLabel(event),
-      txHash: event.transactionHash,
+      date: event.timestamp.toISOString(),
+      sentAmount: isIncoming ? '' : event.amount.toString(),
+      sentCurrency: isIncoming ? '' : currency,
+      receivedAmount: isIncoming ? event.amount.toString() : '',
+      receivedCurrency: isIncoming ? currency : '',
+      feeAmount: !isIncoming && !event.fee.isZero() ? event.fee.toString() : '',
+      feeCurrency: !isIncoming && !event.fee.isZero() ? currency : '',
       netWorthAmount: '', // No USD valuation (spot pricing)
       netWorthCurrency: '',
+      label: getKoinlyLabel(event),
       description: getDescription(event),
-      type: getKoinlyType(event),
-      sendingWallet: isDeposit ? '' : event.from || '',
-      receivingWallet: isDeposit ? event.to || '' : '',
-      fee: '', // Koinly doesn't use separate fee field for withdrawals
+      txHash: event.transactionHash,
     };
 
     if (multipleAccounts) {
@@ -99,19 +94,29 @@ function formatAsLedgible(events: TaxEvent[], multipleAccounts: boolean): string
 }
 
 /**
- * Format as Blockpit (formerly Accointing) XLSX (8 or 9 columns)
+ * Format as Blockpit (formerly Accointing) XLSX
+ * Uses new Blockpit format with separate incoming/outgoing columns
  */
 function formatAsBlockpit(events: TaxEvent[], multipleAccounts: boolean): Buffer {
   const rows: BlockpitRow[] = events.map((event) => {
+    const isIncoming =
+      event.eventType.includes('_received') ||
+      event.eventType === 'coinbase_reward' ||
+      event.eventType === 'snark_fee';
+
     const row: BlockpitRow = {
       timestamp: event.timestamp.toISOString().replace('T', ' ').replace('Z', ''),
-      type: getBlockpitType(event),
-      baseCurrency: TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
-      baseAmount: event.amount.toString(),
-      quoteCurrency: '',
-      quoteAmount: '',
-      feeCurrency: event.fee.isZero() ? '' : TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
-      feeAmount: event.fee.isZero() ? '' : event.fee.toString(),
+      integrationName: 'Mina Protocol',
+      label: getBlockpitType(event),
+      outgoingAsset: isIncoming ? '' : TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
+      outgoingAmount: isIncoming ? '' : event.amount.toString(),
+      incomingAsset: isIncoming ? TAX_EXPORT_CONFIG.CURRENCY_SYMBOL : '',
+      incomingAmount: isIncoming ? event.amount.toString() : '',
+      // Fees only apply to outgoing transactions
+      feeAsset: !isIncoming && !event.fee.isZero() ? TAX_EXPORT_CONFIG.CURRENCY_SYMBOL : '',
+      feeAmount: !isIncoming && !event.fee.isZero() ? event.fee.toString() : '',
+      comment: getDescription(event),
+      trxId: event.transactionHash,
     };
 
     if (multipleAccounts) {
@@ -121,8 +126,24 @@ function formatAsBlockpit(events: TaxEvent[], multipleAccounts: boolean): Buffer
     return row;
   });
 
+  // Map rows to match header column names
+  const mappedRows = rows.map((row) => ({
+    'Timestamp (UTC)': row.timestamp,
+    'Integration Name': row.integrationName,
+    'Label': row.label,
+    'Outgoing Asset': row.outgoingAsset,
+    'Outgoing Amount': row.outgoingAmount,
+    'Incoming Asset': row.incomingAsset,
+    'Incoming Amount': row.incomingAmount,
+    'Fee Asset (optional)': row.feeAsset,
+    'Fee Amount (optional)': row.feeAmount,
+    'Comment (optional)': row.comment,
+    'Trx. ID (optional)': row.trxId,
+    ...(multipleAccounts && { 'Account': row.account || '' }),
+  }));
+
   // Create XLSX workbook
-  const worksheet = XLSX.utils.json_to_sheet(rows, {
+  const worksheet = XLSX.utils.json_to_sheet(mappedRows, {
     header: getBlockpitHeaders(multipleAccounts),
   });
   const workbook = XLSX.utils.book_new();
@@ -132,37 +153,24 @@ function formatAsBlockpit(events: TaxEvent[], multipleAccounts: boolean): Buffer
 }
 
 /**
- * Get Koinly transaction type
- *  coinbase, snark, fees are "mining"
- *  payouts are "rewards"
- *  otherwise "deposit" or "withdrawal" 
- */
-function getKoinlyType(event: TaxEvent): string {
-  switch (event.eventType) {
-    case 'coinbase_reward':
-    case 'snark_fee':
-      return 'mining';
-    case 'fee_transfer_received':
-      return event.isPoolPayout ? 'reward' : 'mining';
-    case 'payment_received':
-    case 'zkapp_payment_received':
-      return event.isPoolPayout ? 'reward' : 'deposit';
-    case 'payment_sent':
-    case 'zkapp_payment_sent':
-      return 'withdrawal';
-    case 'delegation':
-    case 'account_creation_fee':
-      return 'withdrawal'; // Fee-only transactions
-  }
-}
-
-/**
- * Get Koinly label
+ * Get Koinly label (for Advanced Custom Format)
+ * Labels like "Mining" and "Reward" for incoming transactions
  */
 function getKoinlyLabel(event: TaxEvent): string {
-  if (event.isPoolPayout) return 'Staking reward';
-  if (event.eventType === 'snark_fee') return 'SNARK work';
-  if (event.eventType === 'coinbase_reward') return 'Block production reward';
+  // Pool payouts (staking rewards)
+  if (event.isPoolPayout) return 'Reward';
+
+  // Block production and SNARK work are mining activities
+  if (event.eventType === 'coinbase_reward' || event.eventType === 'snark_fee') {
+    return 'Mining';
+  }
+
+  // Fee transfers from block production
+  if (event.eventType === 'fee_transfer_received') {
+    return 'Mining';
+  }
+
+  // Regular deposits and withdrawals have no label
   return '';
 }
 
@@ -252,22 +260,22 @@ function getBlockpitType(event: TaxEvent): string {
 }
 
 /**
- * Get Koinly headers
+ * Get Koinly headers (Advanced Custom Format)
  */
 function getKoinlyHeaders(multipleAccounts: boolean): string[] {
   const headers = [
-    'Koinly Date',
-    'Amount',
-    'Currency',
-    'Label',
-    'TxHash',
+    'Date',
+    'Sent Amount',
+    'Sent Currency',
+    'Received Amount',
+    'Received Currency',
+    'Fee Amount',
+    'Fee Currency',
     'Net Worth Amount',
     'Net Worth Currency',
+    'Label',
     'Description',
-    'Type',
-    'SendingWallet',
-    'ReceivingWallet',
-    'Fee',
+    'TxHash',
   ];
 
   if (multipleAccounts) {
@@ -308,13 +316,16 @@ function getLedgibleHeaders(multipleAccounts: boolean): string[] {
 function getBlockpitHeaders(multipleAccounts: boolean): string[] {
   const headers = [
     'Timestamp (UTC)',
-    'Type',
-    'Base Currency',
-    'Base Amount',
-    'Quote Currency',
-    'Quote Amount',
-    'Fee Currency',
+    'Integration Name',
+    'Label',
+    'Outgoing Asset',
+    'Outgoing Amount',
+    'Incoming Asset',
+    'Incoming Amount',
+    'Fee Asset',
     'Fee Amount',
+    'Comment',
+    'Trx. ID',
   ];
 
   if (multipleAccounts) {
@@ -325,7 +336,7 @@ function getBlockpitHeaders(multipleAccounts: boolean): string[] {
 }
 
 /**
- * Format Koinly rows as CSV
+ * Format Koinly rows as CSV (Advanced Custom Format)
  */
 function formatKoinlyCsv(rows: KoinlyRow[], headers: string[]): string {
   if (rows.length === 0) {
@@ -338,19 +349,19 @@ function formatKoinlyCsv(rows: KoinlyRow[], headers: string[]): string {
   // Map row objects to match header keys
   const mappedRows = rows.map((row) => {
     const mappedRow: Record<string, unknown> = {
-      account: row.account || '',
-      koinly_date: row.koinlyDate,
-      amount: row.amount,
-      currency: row.currency,
-      label: row.label,
-      txhash: row.txHash,
+      date: row.date,
+      sent_amount: row.sentAmount,
+      sent_currency: row.sentCurrency,
+      received_amount: row.receivedAmount,
+      received_currency: row.receivedCurrency,
+      fee_amount: row.feeAmount,
+      fee_currency: row.feeCurrency,
       net_worth_amount: row.netWorthAmount,
       net_worth_currency: row.netWorthCurrency,
+      label: row.label,
       description: row.description,
-      type: row.type,
-      sendingwallet: row.sendingWallet,
-      receivingwallet: row.receivingWallet,
-      fee: row.fee,
+      txhash: row.txHash,
+      account: row.account || '',
     };
 
     return mappedRow;
