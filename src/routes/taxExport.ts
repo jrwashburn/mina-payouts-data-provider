@@ -19,12 +19,28 @@ function getPool(): Pool {
 }
 
 /**
+ * Convert YYYYMMDD format to YYYY-MM-DD format
+ * @param dateString - Date in YYYYMMDD format
+ * @returns Date in YYYY-MM-DD format
+ * @throws Error if format is invalid
+ */
+function convertDateFormat(dateString: string): string {
+  if (!/^\d{8}$/.test(dateString)) {
+    throw new Error(`Date must be in YYYYMMDD format, got: ${dateString}`);
+  }
+  const year = dateString.substring(0, 4);
+  const month = dateString.substring(4, 6);
+  const day = dateString.substring(6, 8);
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * GET /tax-export - Simple interface (single account)
  *
  * Query Parameters:
  * - key (required): Single Mina public key
- * - startDate (required): YYYY-MM-DD
- * - endDate (required): YYYY-MM-DD
+ * - startDate (required): YYYYMMDD
+ * - endDate (required): YYYYMMDD
  * - format (optional): koinly | ledgible | accointing | json (default: json)
  * - payoutKeyword (optional): Single keyword for payout detection
  * - payoutAccount (optional): Single payout source account
@@ -40,11 +56,15 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Convert date format from YYYYMMDD to YYYY-MM-DD
+    const convertedStartDate = convertDateFormat(startDate as string);
+    const convertedEndDate = convertDateFormat(endDate as string);
+
     // Build request from query params
     const request: TaxExportRequest = {
       accounts: [key as string],
-      startDate: startDate as string,
-      endDate: endDate as string,
+      startDate: convertedStartDate,
+      endDate: convertedEndDate,
       format: (format as any) || 'json',
     };
 
@@ -74,8 +94,8 @@ router.get('/', async (req: Request, res: Response) => {
  * Request Body:
  * {
  *   accounts: string[],
- *   startDate: string,
- *   endDate: string,
+ *   startDate: string (YYYYMMDD),
+ *   endDate: string (YYYYMMDD),
  *   format: 'koinly' | 'ledgible' | 'accointing' | 'json',
  *   payoutConfig?: {
  *     memoKeywords?: string[],
@@ -96,9 +116,13 @@ router.post('/', async (req: Request, res: Response) => {
 
     if (!request.startDate || !request.endDate) {
       return res.status(400).json({
-        error: 'startDate and endDate are required (YYYY-MM-DD format)',
+        error: 'startDate and endDate are required (YYYYMMDD format)',
       });
     }
+
+    // Convert date format from YYYYMMDD to YYYY-MM-DD
+    request.startDate = convertDateFormat(request.startDate);
+    request.endDate = convertDateFormat(request.endDate);
 
     // Set defaults
     if (!request.format) {

@@ -16,8 +16,8 @@ describe('Tax Export Integration Tests', () => {
         const response = await request(app)
           .get('/tax-export')
           .query({
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -29,7 +29,7 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            endDate: '2024-01-31',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -41,7 +41,7 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
+            startDate: '20240101',
           });
 
         expect(response.status).toBe(400);
@@ -53,8 +53,8 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         // May return 500 if database not available, but shouldn't be 400
@@ -68,8 +68,8 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             format: 'koinly',
           });
 
@@ -81,8 +81,8 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         // If successful, should return JSON content-type
@@ -96,8 +96,8 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             payoutKeyword: 'Reward',
           });
 
@@ -109,8 +109,8 @@ describe('Tax Export Integration Tests', () => {
           .get('/tax-export')
           .query({
             key: 'B62q' + 'x'.repeat(51),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             payoutAccount: 'B62qPool' + 'x'.repeat(47),
           });
 
@@ -121,8 +121,8 @@ describe('Tax Export Integration Tests', () => {
     describe('Response Headers by Format', () => {
       const validKey = 'B62q' + 'x'.repeat(51);
       const validDates = {
-        startDate: '2024-01-01',
-        endDate: '2024-01-31',
+        startDate: '20240101',
+        endDate: '20240131',
       };
 
       it('should return CSV headers for koinly format', async () => {
@@ -209,8 +209,8 @@ describe('Tax Export Integration Tests', () => {
         const response = await request(app)
           .post('/tax-export')
           .send({
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -222,8 +222,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: [],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -235,7 +235,7 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: ['B62q' + 'x'.repeat(51)],
-            endDate: '2024-01-31',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -247,7 +247,7 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: ['B62q' + 'x'.repeat(51)],
-            startDate: '2024-01-01',
+            startDate: '20240101',
           });
 
         expect(response.status).toBe(400);
@@ -259,8 +259,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: ['B62q' + 'x'.repeat(51)],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).not.toBe(400);
@@ -276,8 +276,8 @@ describe('Tax Export Integration Tests', () => {
               'B62qAAA' + 'x'.repeat(48),
               'B62qBBB' + 'x'.repeat(48),
             ],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).not.toBe(400);
@@ -288,8 +288,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: Array(11).fill('B' + '1'.repeat(54)),
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         expect(response.status).toBe(400);
@@ -304,8 +304,8 @@ describe('Tax Export Integration Tests', () => {
               'B62qAAA' + 'x'.repeat(48),
               'B62qBBB' + 'x'.repeat(48),
             ],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             format: 'koinly',
           });
 
@@ -323,8 +323,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: [validAccount],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             payoutConfig: {
               memoKeywords: ['Payout', 'Reward'],
             },
@@ -338,8 +338,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: [validAccount],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             payoutConfig: {
               payoutAccounts: ['B62qPool' + 'x'.repeat(47)],
             },
@@ -353,8 +353,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: [validAccount],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
             payoutConfig: {
               memoKeywords: ['Payout'],
               payoutAccounts: ['B62qPool' + 'x'.repeat(47)],
@@ -369,8 +369,8 @@ describe('Tax Export Integration Tests', () => {
           .post('/tax-export')
           .send({
             accounts: [validAccount],
-            startDate: '2024-01-01',
-            endDate: '2024-01-31',
+            startDate: '20240101',
+            endDate: '20240131',
           });
 
         // Should succeed with default config
@@ -381,8 +381,8 @@ describe('Tax Export Integration Tests', () => {
     describe('Format Options', () => {
       const validAccount = 'B62q' + 'x'.repeat(51);
       const validDates = {
-        startDate: '2024-01-01',
-        endDate: '2024-01-31',
+        startDate: '20240101',
+        endDate: '20240131',
       };
 
       it('should accept all valid formats', async () => {
@@ -423,8 +423,8 @@ describe('Tax Export Integration Tests', () => {
         .post('/tax-export')
         .send({
           accounts: ['B62q' + 'x'.repeat(51)],
-          startDate: '2024-01-31',
-          endDate: '2024-01-01', // End before start
+          startDate: '20240131',
+          endDate: '20240101', // End before start
         });
 
       expect(response.status).toBe(500);
