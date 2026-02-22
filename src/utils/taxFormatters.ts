@@ -63,7 +63,7 @@ function formatAsKoinly(events: TaxEvent[], multipleAccounts: boolean): string {
 }
 
 /**
- * Format as Ledgible CSV (11 or 12 columns)
+ * Format as Ledgible CSV (13 or 14 columns with multipleAccounts)
  */
 function formatAsLedgible(events: TaxEvent[], multipleAccounts: boolean): string {
   const rows: LedgibleRow[] = events.map((event) => {
@@ -76,11 +76,13 @@ function formatAsLedgible(events: TaxEvent[], multipleAccounts: boolean): string
       side: isIncoming ? 'incoming' : 'outgoing',
       currencySymbol: TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
       quantity: event.amount.toString(),
+      currencySymbol2: '', // Empty for non-exchange transactions
+      quantity2: '', // Empty for non-exchange transactions
       pricePerUnit: 'spot',
       priceCurrency: '', // Empty when using spot
       fee: isIncoming ? '' : event.fee.toString(),
       feeCurrency: isIncoming ? '' : TAX_EXPORT_CONFIG.CURRENCY_SYMBOL,
-      contractAddress: event.transactionHash,
+      orderId: event.transactionHash,
     };
 
     if (multipleAccounts) {
@@ -286,7 +288,7 @@ function getKoinlyHeaders(multipleAccounts: boolean): string[] {
 }
 
 /**
- * Get Ledgible headers
+ * Get Ledgible headers (matches Unknown Exchange template format)
  */
 function getLedgibleHeaders(multipleAccounts: boolean): string[] {
   const headers = [
@@ -294,13 +296,15 @@ function getLedgibleHeaders(multipleAccounts: boolean): string[] {
     'Timezone',
     'Categorization',
     'Side',
-    'Currency Symbol',
-    'Quantity',
+    'Currency (To Currency)',
+    'Quantity (To Amount)',
+    'Currency #2 (From Currency)',
+    'Quantity #2 (From Amount)',
     'Price (per unit)',
     'Price Currency',
     'Fee',
     'Fee Currency',
-    'Contract Address',
+    'Order Id',
   ];
 
   if (multipleAccounts) {
@@ -389,13 +393,15 @@ function formatLedgibleCsv(rows: LedgibleRow[], headers: string[]): string {
       timezone: row.timezone,
       categorization: row.categorization,
       side: row.side,
-      currency_symbol: row.currencySymbol,
-      quantity: row.quantity,
+      currency_to_currency: row.currencySymbol,
+      quantity_to_amount: row.quantity,
+      currency_2_from_currency: row.currencySymbol2,
+      quantity_2_from_amount: row.quantity2,
       price_per_unit: row.pricePerUnit,
       price_currency: row.priceCurrency,
       fee: row.fee,
       fee_currency: row.feeCurrency,
-      contract_address: row.contractAddress,
+      order_id: row.orderId,
     };
 
     return mappedRow;

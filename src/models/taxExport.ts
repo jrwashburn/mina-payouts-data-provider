@@ -117,20 +117,22 @@ export interface KoinlyRow {
   account?: string;
 }
 
-//echo "Date,Timezone,Categorization,Side,Currency Symbol,Quantity,Price (per unit),Price Currency,Fee,Fee Currency,Contract Address"
+//echo "Date,Timezone,Categorization,Side,Currency (To Currency),Quantity (To Amount),Currency #2 (From Currency),Quantity #2 (From Amount),Price (per unit),Price Currency,Fee,Fee Currency,Order Id"
 
 export interface LedgibleRow {
   date: string;
   timezone: string;
   categorization: string;
   side: string;
-  currencySymbol: string;
-  quantity: string;
+  currencySymbol: string; // Maps to "Currency (To Currency)"
+  quantity: string; // Maps to "Quantity (To Amount)"
+  currencySymbol2: string; // Maps to "Currency #2 (From Currency)"
+  quantity2: string; // Maps to "Quantity #2 (From Amount)"
   pricePerUnit: string;
   priceCurrency: string;
   fee: string;
   feeCurrency: string;
-  contractAddress: string;
+  orderId: string; // Maps to "Order Id"
   account?: string;
 }
 
