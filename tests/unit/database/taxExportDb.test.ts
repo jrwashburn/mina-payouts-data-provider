@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pool, QueryResult } from 'pg';
 import {
   queryBlockProduction,
+  queryMiningFees,
   querySnarkFees,
-  queryFeeTransfers,
   queryPayments,
   queryZkApps,
   queryDelegations,
@@ -81,6 +81,50 @@ describe('taxExportDb', () => {
     });
   });
 
+  describe('queryMiningFees', () => {
+    it('should query mining fees with correct parameters', async () => {
+      const mockRows = [
+        {
+          height: 12345,
+          state_hash: 'jxHash1',
+          timestamp: '1704067200000',
+          receiver_key: 'B62qTest1',
+          amount: '141712112',
+          tx_hash: 'CkpHash1',
+        },
+      ];
+      vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: mockRows } as QueryResult);
+
+      const result = await queryMiningFees(mockPool, testAccounts, startTimestamp, endTimestamp);
+
+      expect(mockPool.query).toHaveBeenCalledWith(expect.any(String), [
+        testAccounts,
+        startTimestamp,
+        endTimestamp,
+      ]);
+      expect(result).toEqual(mockRows);
+    });
+
+    it('should include coinbase receiver (receiver == coinbase receiver)', async () => {
+      vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: [] } as QueryResult);
+
+      await queryMiningFees(mockPool, testAccounts, startTimestamp, endTimestamp);
+
+      const query = vi.mocked(mockPool.query).mock.calls[0][0] as string;
+      expect(query).toContain('ic_fee.receiver_id = ic_coinbase.receiver_id');
+      expect(query).toContain("ic_coinbase.command_type = 'coinbase'");
+    });
+
+    it('should include both fee_transfer and fee_transfer_via_coinbase', async () => {
+      vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: [] } as QueryResult);
+
+      await queryMiningFees(mockPool, testAccounts, startTimestamp, endTimestamp);
+
+      const query = vi.mocked(mockPool.query).mock.calls[0][0] as string;
+      expect(query).toContain("IN ('fee_transfer', 'fee_transfer_via_coinbase')");
+    });
+  });
+
   describe('querySnarkFees', () => {
     it('should query SNARK fees with correct parameters', async () => {
       const mockRows = [
@@ -109,59 +153,23 @@ describe('taxExportDb', () => {
       expect(result).toEqual(mockRows);
     });
 
-    it('should filter by fee_transfer command type', async () => {
+    it('should include both fee_transfer and fee_transfer_via_coinbase', async () => {
       vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: [] } as QueryResult);
 
       await querySnarkFees(mockPool, testAccounts, startTimestamp, endTimestamp);
 
       const query = vi.mocked(mockPool.query).mock.calls[0][0] as string;
-      expect(query).toContain("command_type = 'fee_transfer'");
+      expect(query).toContain("IN ('fee_transfer', 'fee_transfer_via_coinbase')");
     });
 
-    it('should exclude block creator (receiver != creator)', async () => {
+    it('should exclude coinbase receiver (receiver != coinbase receiver)', async () => {
       vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: [] } as QueryResult);
 
       await querySnarkFees(mockPool, testAccounts, startTimestamp, endTimestamp);
 
       const query = vi.mocked(mockPool.query).mock.calls[0][0] as string;
-      expect(query).toContain('pk_receiver.id != pk_creator.id');
-    });
-  });
-
-  describe('queryFeeTransfers', () => {
-    it('should query fee transfers with correct parameters', async () => {
-      const mockRows = [
-        {
-          height: 12345,
-          state_hash: 'jxTestHash',
-          timestamp: '1704067200000',
-          receiver_key: 'B62qTest1',
-          amount: '100000000',
-          tx_hash: 'CkpTestHash',
-        },
-      ];
-
-      vi.mocked(mockPool.query).mockResolvedValueOnce({
-        rows: mockRows,
-      } as QueryResult);
-
-      const result = await queryFeeTransfers(
-        mockPool,
-        testAccounts,
-        startTimestamp,
-        endTimestamp
-      );
-
-      expect(result).toEqual(mockRows);
-    });
-
-    it('should filter by fee_transfer_via_coinbase command type', async () => {
-      vi.mocked(mockPool.query).mockResolvedValueOnce({ rows: [] } as QueryResult);
-
-      await queryFeeTransfers(mockPool, testAccounts, startTimestamp, endTimestamp);
-
-      const query = vi.mocked(mockPool.query).mock.calls[0][0] as string;
-      expect(query).toContain("command_type = 'fee_transfer_via_coinbase'");
+      expect(query).toContain('ic_fee.receiver_id != ic_coinbase.receiver_id');
+      expect(query).toContain("ic_coinbase.command_type = 'coinbase'");
     });
   });
 
@@ -345,8 +353,8 @@ describe('taxExportDb', () => {
     it('all queries should filter by canonical chain', async () => {
       const queries = [
         queryBlockProduction,
+        queryMiningFees,
         querySnarkFees,
-        queryFeeTransfers,
         queryPayments,
         queryZkApps,
         queryDelegations,
@@ -366,8 +374,8 @@ describe('taxExportDb', () => {
     it('all queries should order by timestamp', async () => {
       const queries = [
         queryBlockProduction,
+        queryMiningFees,
         querySnarkFees,
-        queryFeeTransfers,
         queryPayments,
         queryDelegations,
       ];

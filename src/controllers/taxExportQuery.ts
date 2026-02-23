@@ -16,8 +16,8 @@ import type {
 } from '../models/taxExport.js';
 import {
   queryBlockProduction,
+  queryMiningFees,
   querySnarkFees,
-  queryFeeTransfers,
   queryPayments,
   queryZkApps,
   queryDelegations,
@@ -51,10 +51,10 @@ export async function getTaxExport(
   const endTimestamp = dateToMinaTimestamp(request.endDate, false);
 
   // 3. Query all transaction types in parallel
-  const [blocks, snarks, feeTransfers, payments, zkApps, delegations] = await Promise.all([
+  const [blocks, miningFees, snarks, payments, zkApps, delegations] = await Promise.all([
     queryBlockProduction(pool, request.accounts, startTimestamp, endTimestamp),
+    queryMiningFees(pool, request.accounts, startTimestamp, endTimestamp),
     querySnarkFees(pool, request.accounts, startTimestamp, endTimestamp),
-    queryFeeTransfers(pool, request.accounts, startTimestamp, endTimestamp),
     queryPayments(pool, request.accounts, startTimestamp, endTimestamp),
     queryZkApps(pool, request.accounts, startTimestamp, endTimestamp),
     queryDelegations(pool, request.accounts, startTimestamp, endTimestamp),
@@ -63,8 +63,8 @@ export async function getTaxExport(
   // 4. Transform to TaxEvent[] with payout detection
   const events: TaxEvent[] = [
     ...transformBlockEvents(blocks),
+    ...transformMiningFeeEvents(miningFees),
     ...transformSnarkEvents(snarks),
-    ...transformFeeTransferEvents(feeTransfers, request.payoutConfig),
     ...transformPaymentEvents(payments, request.accounts, request.payoutConfig),
     ...transformZkAppEvents(zkApps, request.payoutConfig),
     ...transformDelegationEvents(delegations),
@@ -212,6 +212,25 @@ function transformBlockEvents(rows: BlockRewardRow[]): TaxEvent[] {
 }
 
 /**
+ * Transform mining transaction fees to tax events
+ * These are fees earned by block producers (receiver == coinbase receiver)
+ */
+function transformMiningFeeEvents(rows: FeeTransferRow[]): TaxEvent[] {
+  return rows.map((row) => ({
+    accountKey: row.receiver_key,
+    timestamp: parseMinaTimestamp(row.timestamp),
+    blockHeight: row.height,
+    transactionHash: row.tx_hash || row.state_hash,
+    eventType: 'fee_transfer_received' as TaxEventType,
+    amount: new Decimal(row.amount).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
+    fee: new Decimal(0),
+    to: row.receiver_key,
+    memo: 'Transaction fees from block production',
+    isPoolPayout: false, // Mining fees are never pool payouts
+  }));
+}
+
+/**
  * Transform SNARK work fees to tax events
  */
 function transformSnarkEvents(rows: SnarkFeeRow[]): TaxEvent[] {
@@ -227,33 +246,6 @@ function transformSnarkEvents(rows: SnarkFeeRow[]): TaxEvent[] {
     memo: 'SNARK work',
     isPoolPayout: false, // SNARK work is never a pool payout
   }));
-}
-
-/**
- * Transform fee transfers to tax events
- */
-function transformFeeTransferEvents(
-  rows: FeeTransferRow[],
-  payoutConfig?: PayoutConfig,
-): TaxEvent[] {
-  return rows.map((row) => {
-    const event = {
-      accountKey: row.receiver_key,
-      timestamp: parseMinaTimestamp(row.timestamp),
-      blockHeight: row.height,
-      transactionHash: row.tx_hash || row.state_hash,
-      eventType: 'fee_transfer_received' as const,
-      amount: new Decimal(row.amount).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
-      fee: new Decimal(0),
-      to: row.receiver_key,
-      memo: '',
-    };
-
-    return {
-      ...event,
-      isPoolPayout: isPoolPayout(event, payoutConfig),
-    };
-  });
 }
 
 /**

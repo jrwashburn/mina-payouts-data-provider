@@ -45,8 +45,48 @@ export async function queryBlockProduction(
 }
 
 /**
+ * Query mining transaction fees
+ * Identified as fee_transfer or fee_transfer_via_coinbase where receiver == coinbase receiver
+ * Only returns canonical chain blocks
+ */
+export async function queryMiningFees(
+  pool: Pool,
+  accountKeys: string[],
+  startTimestamp: string,
+  endTimestamp: string,
+): Promise<FeeTransferRow[]> {
+  const query = `
+    SELECT
+      b.height,
+      b.state_hash,
+      b.timestamp,
+      pk_receiver.value as receiver_key,
+      CAST(ic_fee.fee AS BIGINT) as amount,
+      ic_fee.hash as tx_hash
+    FROM blocks_internal_commands bic
+    INNER JOIN internal_commands ic_fee ON bic.internal_command_id = ic_fee.id
+    INNER JOIN blocks b ON bic.block_id = b.id
+    INNER JOIN public_keys pk_receiver ON ic_fee.receiver_id = pk_receiver.id
+    -- Find the coinbase receiver for this block
+    INNER JOIN blocks_internal_commands bic_coinbase ON bic_coinbase.block_id = b.id
+    INNER JOIN internal_commands ic_coinbase ON bic_coinbase.internal_command_id = ic_coinbase.id
+      AND ic_coinbase.command_type = 'coinbase'
+    WHERE pk_receiver.value = ANY($1)
+      AND CAST(b.timestamp AS BIGINT) >= $2
+      AND CAST(b.timestamp AS BIGINT) < $3
+      AND b.chain_status = 'canonical'
+      AND ic_fee.command_type IN ('fee_transfer', 'fee_transfer_via_coinbase')
+      AND ic_fee.receiver_id = ic_coinbase.receiver_id
+    ORDER BY b.timestamp;
+  `;
+
+  const result = await pool.query(query, [accountKeys, startTimestamp, endTimestamp]);
+  return result.rows;
+}
+
+/**
  * Query SNARK work fees
- * Identified as fee_transfer where receiver != block creator
+ * Identified as fee_transfer or fee_transfer_via_coinbase where receiver != coinbase receiver
  * Only returns canonical chain blocks
  */
 export async function querySnarkFees(
@@ -61,53 +101,22 @@ export async function querySnarkFees(
       b.state_hash,
       b.timestamp,
       pk_receiver.value as receiver_key,
-      CAST(ic.fee AS BIGINT) as amount,
-      ic.hash as tx_hash
+      CAST(ic_fee.fee AS BIGINT) as amount,
+      ic_fee.hash as tx_hash
     FROM blocks_internal_commands bic
-    INNER JOIN internal_commands ic ON bic.internal_command_id = ic.id
+    INNER JOIN internal_commands ic_fee ON bic.internal_command_id = ic_fee.id
     INNER JOIN blocks b ON bic.block_id = b.id
-    INNER JOIN public_keys pk_receiver ON ic.receiver_id = pk_receiver.id
-    LEFT JOIN public_keys pk_creator ON b.creator_id = pk_creator.id
+    INNER JOIN public_keys pk_receiver ON ic_fee.receiver_id = pk_receiver.id
+    -- Find the coinbase receiver for this block
+    INNER JOIN blocks_internal_commands bic_coinbase ON bic_coinbase.block_id = b.id
+    INNER JOIN internal_commands ic_coinbase ON bic_coinbase.internal_command_id = ic_coinbase.id
+      AND ic_coinbase.command_type = 'coinbase'
     WHERE pk_receiver.value = ANY($1)
       AND CAST(b.timestamp AS BIGINT) >= $2
       AND CAST(b.timestamp AS BIGINT) < $3
       AND b.chain_status = 'canonical'
-      AND ic.command_type = 'fee_transfer'
-      AND pk_receiver.id != pk_creator.id
-    ORDER BY b.timestamp;
-  `;
-
-  const result = await pool.query(query, [accountKeys, startTimestamp, endTimestamp]);
-  return result.rows;
-}
-
-/**
- * Query fee transfers received (pool payouts via coinbase)
- * Only returns canonical chain blocks
- */
-export async function queryFeeTransfers(
-  pool: Pool,
-  accountKeys: string[],
-  startTimestamp: string,
-  endTimestamp: string,
-): Promise<FeeTransferRow[]> {
-  const query = `
-    SELECT
-      b.height,
-      b.state_hash,
-      b.timestamp,
-      pk_receiver.value as receiver_key,
-      CAST(ic.fee AS BIGINT) as amount,
-      ic.hash as tx_hash
-    FROM blocks_internal_commands bic
-    INNER JOIN internal_commands ic ON bic.internal_command_id = ic.id
-    INNER JOIN blocks b ON bic.block_id = b.id
-    INNER JOIN public_keys pk_receiver ON ic.receiver_id = pk_receiver.id
-    WHERE pk_receiver.value = ANY($1)
-      AND CAST(b.timestamp AS BIGINT) >= $2
-      AND CAST(b.timestamp AS BIGINT) < $3
-      AND b.chain_status = 'canonical'
-      AND ic.command_type = 'fee_transfer_via_coinbase'
+      AND ic_fee.command_type IN ('fee_transfer', 'fee_transfer_via_coinbase')
+      AND ic_fee.receiver_id != ic_coinbase.receiver_id
     ORDER BY b.timestamp;
   `;
 

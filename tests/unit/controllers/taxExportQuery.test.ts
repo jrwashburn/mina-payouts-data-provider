@@ -4,8 +4,8 @@ import { getTaxExport } from '../../../src/controllers/taxExportQuery.js';
 import type { TaxExportRequest } from '../../../src/models/taxExport.js';
 import {
   queryBlockProduction,
+  queryMiningFees,
   querySnarkFees,
-  queryFeeTransfers,
   queryPayments,
   queryZkApps,
   queryDelegations,
@@ -17,8 +17,8 @@ import { formatTaxData } from '../../../src/utils/taxFormatters.js';
 // Mock all dependencies
 vi.mock('../../../src/database/taxExportDb.js', () => ({
   queryBlockProduction: vi.fn(() => Promise.resolve([])),
+  queryMiningFees: vi.fn(() => Promise.resolve([])),
   querySnarkFees: vi.fn(() => Promise.resolve([])),
-  queryFeeTransfers: vi.fn(() => Promise.resolve([])),
   queryPayments: vi.fn(() => Promise.resolve([])),
   queryZkApps: vi.fn(() => Promise.resolve([])),
   queryDelegations: vi.fn(() => Promise.resolve([])),
@@ -326,6 +326,39 @@ describe('taxExportQuery - Data Transformation', () => {
 
       const events = vi.mocked(formatTaxData).mock.calls[0][0];
       expect(events.filter(e => e.eventType === 'coinbase_reward')).toHaveLength(0);
+    });
+  });
+
+  describe('Mining Fee Transformation', () => {
+    it('should create fee_transfer_received event for mining fees', async () => {
+      vi.mocked(queryMiningFees).mockResolvedValueOnce([
+        {
+          height: 12345,
+          state_hash: 'jxTestHash',
+          timestamp: testTimestamp,
+          receiver_key: validAccount,
+          amount: '141712112', // Mining fees in nanomina
+          tx_hash: 'CkpTestHash',
+        },
+      ]);
+
+      const request: TaxExportRequest = {
+        accounts: [validAccount],
+        startDate: '2024-01-01',
+        endDate: '2024-01-31',
+        format: 'json',
+      };
+
+      await getTaxExport(mockPool, request);
+
+      const events = vi.mocked(formatTaxData).mock.calls[0][0];
+      const miningFeeEvent = events.find(e => e.eventType === 'fee_transfer_received' && e.memo === 'Transaction fees from block production');
+
+      expect(miningFeeEvent).toBeDefined();
+      expect(miningFeeEvent?.accountKey).toBe(validAccount);
+      expect(miningFeeEvent?.amount.toString()).toBe('0.141712112');
+      expect(miningFeeEvent?.fee.toString()).toBe('0');
+      expect(miningFeeEvent?.isPoolPayout).toBe(false);
     });
   });
 
@@ -884,8 +917,8 @@ describe('taxExportQuery - Data Transformation', () => {
       await getTaxExport(mockPool, request);
 
       expect(queryBlockProduction).toHaveBeenCalledTimes(1);
+      expect(queryMiningFees).toHaveBeenCalledTimes(1);
       expect(querySnarkFees).toHaveBeenCalledTimes(1);
-      expect(queryFeeTransfers).toHaveBeenCalledTimes(1);
       expect(queryPayments).toHaveBeenCalledTimes(1);
       expect(queryZkApps).toHaveBeenCalledTimes(1);
       expect(queryDelegations).toHaveBeenCalledTimes(1);
