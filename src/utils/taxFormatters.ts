@@ -347,8 +347,10 @@ function formatKoinlyCsv(rows: KoinlyRow[], headers: string[]): string {
     return headers.join(',') + '\n';
   }
 
-  // Convert headers to lowercase, replace spaces with underscores for object keys
-  const headerKeys = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+  // Convert headers to lowercase, replace non-alphanumeric with underscores, trim trailing underscores
+  const headerKeys = headers.map((h) =>
+    h.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  );
 
   // Map row objects to match header keys
   const mappedRows = rows.map((row) => {
@@ -382,8 +384,10 @@ function formatLedgibleCsv(rows: LedgibleRow[], headers: string[]): string {
     return headers.join(',') + '\n';
   }
 
-  // Convert headers to lowercase, replace spaces with underscores for object keys
-  const headerKeys = headers.map((h) => h.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+  // Convert headers to lowercase, replace non-alphanumeric with underscores, trim trailing underscores
+  const headerKeys = headers.map((h) =>
+    h.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  );
 
   // Map row objects to match header keys
   const mappedRows = rows.map((row) => {
