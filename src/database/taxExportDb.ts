@@ -27,7 +27,8 @@ export async function queryBlockProduction(
       b.state_hash,
       b.timestamp,
       pk_receiver.value as receiver_key,
-      CAST(ic.fee AS BIGINT) as total_reward
+      CAST(ic.fee AS BIGINT) as total_reward,
+      b.state_hash || '-' || ic.id::text as tx_hash
     FROM blocks_internal_commands bic
     INNER JOIN internal_commands ic ON bic.internal_command_id = ic.id
     INNER JOIN blocks b ON bic.block_id = b.id
@@ -62,7 +63,7 @@ export async function queryMiningFees(
       b.timestamp,
       pk_receiver.value as receiver_key,
       CAST(ic_fee.fee AS BIGINT) as amount,
-      ic_fee.hash as tx_hash
+      b.state_hash || '-' || ic_fee.id::text as tx_hash
     FROM blocks_internal_commands bic
     INNER JOIN internal_commands ic_fee ON bic.internal_command_id = ic_fee.id
     INNER JOIN blocks b ON bic.block_id = b.id
@@ -102,7 +103,7 @@ export async function querySnarkFees(
       b.timestamp,
       pk_receiver.value as receiver_key,
       CAST(ic_fee.fee AS BIGINT) as amount,
-      ic_fee.hash as tx_hash
+      b.state_hash || '-' || ic_fee.id::text as tx_hash
     FROM blocks_internal_commands bic
     INNER JOIN internal_commands ic_fee ON bic.internal_command_id = ic_fee.id
     INNER JOIN blocks b ON bic.block_id = b.id

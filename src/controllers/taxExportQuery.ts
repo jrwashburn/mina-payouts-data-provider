@@ -201,7 +201,7 @@ function transformBlockEvents(rows: BlockRewardRow[]): TaxEvent[] {
       accountKey: row.receiver_key,
       timestamp: parseMinaTimestamp(row.timestamp),
       blockHeight: row.height,
-      transactionHash: row.state_hash,
+      transactionHash: row.tx_hash || row.state_hash,
       eventType: 'coinbase_reward' as TaxEventType,
       amount: new Decimal(row.total_reward).div(TAX_EXPORT_CONFIG.NANOMINA_PER_MINA),
       fee: new Decimal(0),
