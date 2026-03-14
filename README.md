@@ -34,6 +34,10 @@ The blocks needed for payout calculation can be retrieved from the /blocks endpo
 
 ## tax-export
 
+WARNING: this feature is new and has not been tested by uploading data to the various providers.
+WARNING: this is a new feature that has not been thoroughly tested across a large set of keys and scenarios.
+WARNING: use at your own risk and please verify the results. PRs welcome.
+
 The /tax-export endpoint provides transaction history for tax reporting purposes. It exports all transaction types (block production, SNARK fees, payments, zkApp transactions, delegations, and fee transfers) in formats compatible with popular cryptocurrency tax software.
 
 ### Supported Formats
