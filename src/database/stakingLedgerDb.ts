@@ -130,7 +130,7 @@ export async function insertBatch(dataArray: StakingLedgerSourceRow[], hash: str
     console.error('Failed to insert batch, starting rollback', error);
     await client.query('ROLLBACK');
     console.error(`Error inserting batch: ${error}`);
-    throw new Error('Failed to insert batch');
+    throw new Error('Failed to insert batch', { cause: error });
   } finally {
     client.release();
   }
