@@ -36,7 +36,7 @@ export function decodeMemo(base58Memo: string | null | undefined): string {
     decoded = decoded.replace(/\0/g, '').trim();
 
     return decoded;
-  } catch (error) {
+  } catch {
     // If decoding fails, return empty string
     return '';
   }

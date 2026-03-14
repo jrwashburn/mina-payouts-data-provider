@@ -56,6 +56,15 @@ router.get('/', async (req: Request, res: Response) => {
       });
     }
 
+    // Validate format early
+    const validFormats = ['koinly', 'ledgible', 'blockpit', 'json'] as const;
+    const formatValue = (format as string) || 'json';
+    if (!validFormats.includes(formatValue as typeof validFormats[number])) {
+      return res.status(400).json({
+        error: 'format must be: koinly, ledgible, blockpit, or json',
+      });
+    }
+
     // Convert date format from YYYYMMDD to YYYY-MM-DD
     const convertedStartDate = convertDateFormat(startDate as string);
     const convertedEndDate = convertDateFormat(endDate as string);
@@ -65,7 +74,7 @@ router.get('/', async (req: Request, res: Response) => {
       accounts: [key as string],
       startDate: convertedStartDate,
       endDate: convertedEndDate,
-      format: (format as any) || 'json',
+      format: formatValue as TaxExportRequest['format'],
     };
 
     // Add payout config if provided
