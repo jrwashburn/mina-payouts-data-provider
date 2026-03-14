@@ -81,7 +81,6 @@ async function compareBlockHeights(): Promise<boolean> {
     trustArchive = false;
     logger.warn(`Current archive db block height: ${blockHeightFromArchiveDb}, block height from node(s): ${blockHeightFromNode}`);
   } else {
-    trustArchive = true;
     logger.info(`Current archive db block height: ${blockHeightFromArchiveDb}, block height from node(s): ${blockHeightFromNode}`);
   }
   return trustArchive;
@@ -97,7 +96,6 @@ async function checkMissingHeightsLast7500Blocks(): Promise<boolean> {
     trustArchive = false;
   } else {
     logger.info(`Archive database has all blocks since height ${lowerBoundary}`);
-    trustArchive = true;
   }
   return trustArchive;
 }
@@ -112,7 +110,6 @@ async function checkNullParentsLast7500Blocks(): Promise<boolean> {
     trustArchive = false;
   } else {
     logger.info(`Archive database has parents for all blocks since ${lowerBoundary}`);
-    trustArchive = true;
   }
   return trustArchive;
 }
