@@ -32,6 +32,114 @@ The blocks needed for payout calculation can be retrieved from the /blocks endpo
 
 [/blocks?key=[blockProducerKey]&minHeight=[minBlockHeight]&maxHeight=[maxBlockHeight]](http://api.minastakes.com/blocks?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L&minHeight=1000&maxHeight=10000)
 
+## tax-export
+
+WARNING: this feature is new and has not been tested by uploading data to the various providers.
+WARNING: this is a new feature that has not been thoroughly tested across a large set of keys and scenarios.
+WARNING: use at your own risk and please verify the results. PRs welcome.
+
+The /tax-export endpoint provides transaction history for tax reporting purposes. It exports all transaction types (block production, SNARK fees, payments, zkApp transactions, delegations, and fee transfers) in formats compatible with popular cryptocurrency tax software.
+
+### Supported Formats
+- **koinly** - CSV format for Koinly tax software
+- **ledgible** - CSV format for Ledgible tax software
+- **accointing** - XLSX format for Accointing (now Crypto.com Tax) software
+- **json** - JSON format for custom processing
+
+### GET /tax-export (Simple Interface)
+
+For a single account with basic configuration:
+
+```
+GET /tax-export?key=[publicKey]&startDate=YYYYMMDD&endDate=YYYYMMDD&format=[format]
+```
+
+**Required Parameters:**
+- `key` - Mina public key (55 characters)
+- `startDate` - Start date in YYYYMMDD format
+- `endDate` - End date in YYYYMMDD format (max 365 days from start)
+
+**Optional Parameters:**
+- `format` - Output format: `koinly`, `ledgible`, `accointing`, or `json` (default: json)
+- `payoutKeyword` - Keyword to identify pool payouts in transaction memos (default: "Payout")
+- `payoutAccount` - Public key of the payout source account for pool payout detection
+
+**Example:**
+```
+/tax-export?key=B62qkBqSkXgkirtU3n8HJ9YgwHh3vUD6kGJ5ZRkQYGNPeL5xYL2tL1L&startDate=20240101&endDate=20241231&format=koinly
+```
+
+### POST /tax-export (Advanced Interface)
+
+For multiple accounts or custom payout detection:
+
+```
+POST /tax-export
+Content-Type: application/json
+
+{
+  "accounts": ["publicKey1", "publicKey2", ...],
+  "startDate": "YYYYMMDD",
+  "endDate": "YYYYMMDD",
+  "format": "koinly",
+  "payoutConfig": {
+    "memoKeywords": ["Payout", "Reward"],
+    "payoutAccounts": ["B62q..."]
+  }
+}
+```
+
+**Required Fields:**
+- `accounts` - Array of Mina public keys (1-10 accounts)
+- `startDate` - Start date in YYYYMMDD format
+- `endDate` - End date in YYYYMMDD format (max 365 days)
+
+**Optional Fields:**
+- `format` - Output format (default: json)
+- `payoutConfig` - Payout detection configuration
+  - `memoKeywords` - Array of keywords to identify pool payouts in memos
+  - `payoutAccounts` - Array of public keys for payout source accounts
+
+### Transaction Types Included
+
+The export includes all transaction types affecting the account balance or requiring tax reporting:
+
+- **Block Production** - Coinbase rewards from producing blocks
+- **SNARK Fees** - Compensation for SNARK work
+- **Payments** - Sent and received payments (with memo support)
+- **Fee Transfers** - Fee transfers received
+- **zkApp Transactions** - Smart contract interactions with balance changes
+- **Delegations** - Stake delegation transactions (fee only)
+- **Account Creation Fees** - Fees paid when receiving payment that creates a new account
+
+### Pool Payout Detection
+
+Pool payout detection **only applies to inbound (received) transactions**. Outbound (sent) transactions are never classified as pool payouts.
+
+Received transactions can be automatically classified as pool payouts based on:
+1. **Memo keywords** (e.g., "Payout") - useful for pools that include keywords in payment memos
+2. **Source account** (e.g., pool's payout wallet address) - useful for identifying all payments from a specific pool
+
+This helps distinguish staking pool payouts from other income for proper tax categorization.
+
+**Transaction types that support pool payout detection:**
+- Payments received (regular payments)
+- Fee transfers received
+- zkApp transactions with positive balance changes
+
+**Transaction types that never have pool payout flag:**
+- Payments sent (outbound)
+- Block production rewards (coinbase)
+- SNARK work fees
+- Delegations
+- Account creation fees
+
+### Limitations
+
+- Maximum 10 accounts per request
+- Maximum 365-day date range per request
+- Dates must be in strict YYYYMMDD format
+
 # Deployment
 
 ## create container images

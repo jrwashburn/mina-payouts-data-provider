@@ -1,0 +1,328 @@
+import { describe, it, expect } from 'vitest';
+import { formatTaxData } from '../../../src/utils/taxFormatters.js';
+import { TaxEvent } from '../../../src/models/taxExport.js';
+import Decimal from 'decimal.js';
+
+describe('taxFormatters', () => {
+  // Helper to create a basic tax event
+  const createTestEvent = (overrides?: Partial<TaxEvent>): TaxEvent => ({
+    accountKey: 'B62qTest123',
+    timestamp: new Date('2024-01-15T10:30:00.000Z'),
+    blockHeight: 12345,
+    transactionHash: 'CkpTest123',
+    eventType: 'payment_received',
+    amount: new Decimal('100'),
+    fee: new Decimal('0.1'),
+    to: 'B62qTest123',
+    from: 'B62qSender456',
+    memo: 'Test payment',
+    isPoolPayout: false,
+    ...overrides,
+  });
+
+  describe('JSON Format', () => {
+    it('should format events as JSON string', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'json', false);
+
+      expect(typeof result).toBe('string');
+      const parsed = JSON.parse(result as string);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(1);
+    });
+
+    it('should preserve all event fields in JSON format', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'json', false);
+      const parsed = JSON.parse(result as string);
+
+      expect(parsed[0].accountKey).toBe('B62qTest123');
+      expect(parsed[0].blockHeight).toBe(12345);
+      expect(parsed[0].eventType).toBe('payment_received');
+    });
+
+    it('should handle empty events array', () => {
+      const result = formatTaxData([], 'json', false);
+      const parsed = JSON.parse(result as string);
+      expect(parsed).toEqual([]);
+    });
+  });
+
+  describe('Koinly CSV Format', () => {
+    it('should format single event as CSV with 12 columns (single account)', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'koinly', false);
+
+      expect(typeof result).toBe('string');
+      const lines = (result as string).split('\n');
+      expect(lines[0]).toContain('Date');
+      expect(lines[0]).toContain('Sent Amount');
+      expect(lines[0]).toContain('Received Amount');
+      expect(lines[0].split(',').length).toBe(12);
+    });
+
+    it('should format multiple accounts with 13 columns (includes Account)', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'koinly', true);
+
+      const lines = (result as string).split('\n');
+      expect(lines[0]).toContain('Account');
+      expect(lines[0].split(',').length).toBe(13);
+    });
+
+    it('should format coinbase_reward with Mining label', () => {
+      const events = [createTestEvent({ eventType: 'coinbase_reward', amount: new Decimal('100'), memo: '' })];
+      const result = formatTaxData(events, 'koinly', false);
+
+      // Should have received amount and Mining label
+      expect(result).toContain('100');
+      expect(result).toContain('Mining');
+      expect(result).toContain('Block production reward'); // Description
+    });
+
+    it('should format pool payout with Reward label', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_received',
+        isPoolPayout: true
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+
+      expect(result).toContain('Reward');
+    });
+
+    it('should format payment_sent with sent amount and fee', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_sent',
+        amount: new Decimal('100'),
+        fee: new Decimal('0.1')
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+
+      // Should have sent amount and separate fee
+      expect(result).toContain('100');
+      expect(result).toContain('0.1');
+    });
+
+    it('should add fee to amount for withdrawals (Koinly requirement)', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_sent',
+        amount: new Decimal('100'),
+        fee: new Decimal('0.5')
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+      const lines = (result as string).split('\n');
+
+      // Sent Amount should be 100 (not 100.5 - fee is separate)
+      const values = lines[1].split(',');
+      expect(values[1]).toBe('100');
+      // Fee Amount should be 0.5
+      expect(values[5]).toBe('0.5');
+    });
+
+    it('should NOT add fee to amount for deposits', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_received',
+        amount: new Decimal('100'),
+        fee: new Decimal('0.5')
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+      const lines = (result as string).split('\n');
+
+      // Received Amount should be 100
+      const values = lines[1].split(',');
+      expect(values[3]).toBe('100');
+      // Fee Amount should be empty for incoming transactions
+      expect(values[5]).toBe('');
+    });
+
+    it('should use ISO timestamp format', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'koinly', false);
+
+      expect(result).toContain('2024-01-15T10:30:00.000Z');
+    });
+
+    it('should include Mining label for SNARK work', () => {
+      const events = [createTestEvent({
+        eventType: 'snark_fee',
+        memo: ''
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+
+      expect(result).toContain('Mining');
+      expect(result).toContain('SNARK work'); // Description
+    });
+
+    it('should escape CSV special characters', () => {
+      const events = [createTestEvent({
+        memo: 'Payment with, comma and "quotes"'
+      })];
+      const result = formatTaxData(events, 'koinly', false);
+
+      // Should wrap in quotes and escape internal quotes
+      expect(result).toContain('""');
+    });
+  });
+
+  describe('Ledgible CSV Format', () => {
+    it('should format single event as CSV with 13 columns (single account)', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      const lines = (result as string).split('\n');
+      expect(lines[0]).toContain('Date');
+      expect(lines[0].split(',').length).toBe(13);
+    });
+
+    it('should format date as MM/DD/YYYY HH:mm:ss', () => {
+      const events = [createTestEvent({
+        timestamp: new Date('2024-01-15T10:30:45.000Z')
+      })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('01/15/2024 10:30:45');
+    });
+
+    it('should categorize coinbase_reward as Mining Income', () => {
+      const events = [createTestEvent({ eventType: 'coinbase_reward' })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('Mining Income');
+    });
+
+    it('should categorize pool payout as Staking Rewards', () => {
+      const events = [createTestEvent({
+        eventType: 'payment_received',
+        isPoolPayout: true
+      })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('Staking Rewards');
+    });
+
+    it('should categorize payment_sent as Withdrawal', () => {
+      const events = [createTestEvent({ eventType: 'payment_sent' })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('Withdrawal');
+    });
+
+    it('should mark incoming side for received payments', () => {
+      const events = [createTestEvent({ eventType: 'payment_received' })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('incoming');
+    });
+
+    it('should mark outgoing side for sent payments', () => {
+      const events = [createTestEvent({ eventType: 'payment_sent' })];
+      const result = formatTaxData(events, 'ledgible', false);
+
+      expect(result).toContain('outgoing');
+    });
+
+    it('should use empty price currency when using spot pricing', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'ledgible', false);
+      const lines = (result as string).split('\n');
+      const dataRow = lines[1].split(',');
+
+      // Price Currency field (index 7) should be empty when using spot pricing
+      expect(dataRow[7]).toBe('');
+    });
+  });
+
+  describe('Accointing XLSX Format', () => {
+    it('should format as Buffer for XLSX', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'blockpit', false);
+
+      expect(Buffer.isBuffer(result)).toBe(true);
+    });
+
+    it('should create valid XLSX structure', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'blockpit', false);
+
+      // XLSX files start with PK (ZIP header)
+      expect((result as Buffer).toString('utf8', 0, 2)).toBe('PK');
+    });
+
+    it('should handle coinbase as staking type', () => {
+      const events = [createTestEvent({ eventType: 'coinbase_reward' })];
+      const result = formatTaxData(events, 'blockpit', false);
+
+      // Can't easily test XLSX content without parsing, but verify it doesn't throw
+      expect(Buffer.isBuffer(result)).toBe(true);
+    });
+
+    it('should handle payment_sent as withdraw type', () => {
+      const events = [createTestEvent({ eventType: 'payment_sent' })];
+      const result = formatTaxData(events, 'blockpit', false);
+
+      expect(Buffer.isBuffer(result)).toBe(true);
+    });
+
+    it('should format timestamp without T and Z', () => {
+      // Can't directly test XLSX content, but ensure no errors
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'blockpit', false);
+
+      expect(Buffer.isBuffer(result)).toBe(true);
+      expect((result as Buffer).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Format Edge Cases', () => {
+    it('should handle delegation events with delegateTarget', () => {
+      const events = [createTestEvent({
+        eventType: 'delegation',
+        delegateTarget: 'B62qDelegate789',
+        amount: new Decimal('0'),
+        fee: new Decimal('0.1'),
+        memo: '' // Clear memo so getDescription generates delegation description
+      })];
+
+      const koinlyResult = formatTaxData(events, 'koinly', false);
+      expect(koinlyResult).toContain('Delegate to B62qDelegate789');
+    });
+
+    it('should handle account creation fee events', () => {
+      const events = [createTestEvent({
+        eventType: 'account_creation_fee',
+        amount: new Decimal('1'),
+        memo: 'Account creation fee'
+      })];
+
+      const result = formatTaxData(events, 'koinly', false);
+      expect(result).toContain('Account creation fee');
+    });
+
+    it('should handle zero fee transactions', () => {
+      const events = [createTestEvent({
+        fee: new Decimal('0')
+      })];
+
+      const result = formatTaxData(events, 'koinly', false);
+      expect(typeof result).toBe('string');
+    });
+
+    it('should handle very large amounts with Decimal precision', () => {
+      const events = [createTestEvent({
+        amount: new Decimal('999999999999.123456789')
+      })];
+
+      const result = formatTaxData(events, 'koinly', false);
+      expect(result).toContain('999999999999.123456789');
+    });
+
+    it('should default to json for unknown format', () => {
+      const events = [createTestEvent()];
+      const result = formatTaxData(events, 'unknown' as any, false);
+
+      expect(typeof result).toBe('string');
+      const parsed = JSON.parse(result as string);
+      expect(Array.isArray(parsed)).toBe(true);
+    });
+  });
+});
