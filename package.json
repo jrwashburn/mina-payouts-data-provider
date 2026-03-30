@@ -43,7 +43,7 @@
     "pino": "^10.1.0",
     "pino-http": "^11.0.0",
     "response-time": "^2.3.3",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
